@@ -1,16 +1,34 @@
--- Загрузка интерфейса Fluent UI
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+-- Отладка загрузки
+print("[Delta Hub] Запуск скрипта...")
+
+-- Проверка доступности интернета и загрузки Fluent UI
+local success, Fluent = pcall(function()
+    return loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+end)
+
+if not success or not Fluent then
+    warn("[Delta Hub] Ошибка: Не удалось загрузить библиотеку интерфейса Fluent UI!")
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Delta Hub Error",
+        Text = "Не удалось загрузить библиотеку интерфейса!",
+        Duration = 5
+    })
+    return
+end
+
+print("[Delta Hub] Интерфейс успешно загружен, создаем окно...")
+
 local SaveManager = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/InterfaceManager.lua"))()
 
 local Window = Fluent:Window({
     Title = "Blox Fruits | Delta God Mode Hub",
-    SubTitle = "v5.0 Ultimate Edition (Fully Working)",
+    SubTitle = "v5.1 Debug Edition",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 480),
     Acrylic = true,
     Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.LeftControl -- Кнопка сворачивания (также есть кнопка в интерфейсе)
+    MinimizeKey = Enum.KeyCode.LeftControl
 })
 
 -- Вкладки
@@ -30,7 +48,6 @@ local Remotes = ReplicatedStorage:FindFirstChild("Remotes")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 
--- Глобальная конфигурация функций
 local Config = {
     AutoFarmLevel = false,
     AutoQuest = false,
@@ -46,7 +63,6 @@ local Config = {
     AutoStat = false
 }
 
--- Утилита безопасной телепортации
 function TpTo(CFramePos)
     pcall(function()
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -55,7 +71,6 @@ function TpTo(CFramePos)
     end)
 end
 
--- Функция Noclip (проход сквозь стены, чтобы не застревать)
 RunService.Stepped:Connect(function()
     if Config.Noclip and LocalPlayer.Character then
         for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
@@ -66,14 +81,11 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- ==================== 1. ФАРМ УРОВНЕЙ И КВЕСТОВ ====================
-
+-- 1. ФАРМ УРОВНЕЙ
 Tabs.Main:AddToggle("AutoQuestToggle", {
     Title = "Авто-взятие квестов по уровню",
     Default = false,
-    Callback = function(Value)
-        Config.AutoQuest = Value
-    end
+    Callback = function(Value) Config.AutoQuest = Value end
 })
 
 Tabs.Main:AddToggle("AutoFarmLevelToggle", {
@@ -85,34 +97,25 @@ Tabs.Main:AddToggle("AutoFarmLevelToggle", {
             while Config.AutoFarmLevel do
                 task.wait(0.1)
                 pcall(function()
-                    -- Проверка квеста
                     if Config.AutoQuest then
                         local questGui = LocalPlayer.PlayerGui.Main.Quest
                         if not questGui.Visible then
                             Remotes.CommF_:InvokeServer("RequestQuest")
                         end
                     end
-                    
-                    -- Поиск врагов на карте
                     local enemiesFolder = Workspace:FindFirstChild("Enemies")
                     if enemiesFolder then
                         for _, enemy in pairs(enemiesFolder:GetChildren()) do
                             if not Config.AutoFarmLevel then break end
                             local hum = enemy:FindFirstChild("Humanoid")
                             local hrp = enemy:FindFirstChild("HumanoidRootPart")
-                            
                             if hum and hrp and hum.Health > 0 then
-                                -- Сбор мобов в кучу для быстрого убийства
                                 if Config.BringMobs then
                                     hrp.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
                                     hrp.CanCollide = false
                                     hum.WalkSpeed = 0
                                 end
-                                
-                                -- Виснем над мобом и бьем
                                 TpTo(hrp.CFrame * CFrame.new(0, 12, 3))
-                                
-                                -- Симуляция удара мечом/фруктом
                                 local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
                                 if tool and tool:FindFirstChild("Handle") then
                                     tool:Activate()
@@ -129,17 +132,13 @@ Tabs.Main:AddToggle("AutoFarmLevelToggle", {
 Tabs.Main:AddToggle("BringMobsToggle", {
     Title = "Сбор мобов (Bring Mobs)",
     Default = true,
-    Callback = function(Value)
-        Config.BringMobs = Value
-    end
+    Callback = function(Value) Config.BringMobs = Value end
 })
 
 Tabs.Main:AddToggle("NoclipToggle", {
     Title = "Анти-застревание (Noclip)",
     Default = false,
-    Callback = function(Value)
-        Config.Noclip = Value
-    end
+    Callback = function(Value) Config.Noclip = Value end
 })
 
 Tabs.Main:AddToggle("AutoBusoToggle", {
@@ -160,21 +159,13 @@ Tabs.Main:AddToggle("AutoBusoToggle", {
     end
 })
 
--- ==================== 2. ФАРМ БОССОВ ====================
-
-local BossList = {
-    "Darkbeard", "Cursed Captain", "Order", "rip_indra", 
-    "Dough King", "Beautiful Pirate", "Cake Prince", 
-    "Saber Expert", "Awakened Ice Admiral", "Tide Keeper"
-}
-
+-- 2. ФАРМ БОССОВ
+local BossList = {"Darkbeard", "Cursed Captain", "Order", "rip_indra", "Dough King", "Beautiful Pirate", "Cake Prince"}
 Tabs.Bosses:AddDropdown("BossDropdown", {
     Title = "Выбрать босса",
     Values = BossList,
     Default = 1,
-    Callback = function(Value)
-        Config.SelectedBoss = Value
-    end
+    Callback = function(Value) Config.SelectedBoss = Value end
 })
 
 Tabs.Bosses:AddToggle("AutoBossToggle", {
@@ -186,21 +177,13 @@ Tabs.Bosses:AddToggle("AutoBossToggle", {
             while Config.AutoBoss do
                 task.wait(0.3)
                 pcall(function()
-                    local enemiesFolder = Workspace:FindFirstChild("Enemies")
-                    if enemiesFolder then
-                        local target = enemiesFolder:FindFirstChild(Config.SelectedBoss)
-                        if target and target:FindFirstChild("HumanoidRootPart") and target.Humanoid.Health > 0 then
-                            TpTo(target.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0))
-                            local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                            if tool then tool:Activate() end
-                        else
-                            Fluent:Notify({
-                                Title = "Ожидание босса",
-                                Content = Config.SelectedBoss .. " еще не появился.",
-                                Duration = 2
-                            })
-                            task.wait(3)
-                        end
+                    local target = Workspace.Enemies:FindFirstChild(Config.SelectedBoss)
+                    if target and target:FindFirstChild("HumanoidRootPart") and target.Humanoid.Health > 0 then
+                        TpTo(target.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0))
+                        local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                        if tool then tool:Activate() end
+                    else
+                        task.wait(3)
                     end
                 end)
             end
@@ -208,24 +191,9 @@ Tabs.Bosses:AddToggle("AutoBossToggle", {
     end
 })
 
-Tabs.Bosses:AddButton({
-    Title = "Телепорт к боссу (Разово)",
-    Callback = function()
-        pcall(function()
-            local target = Workspace.Enemies:FindFirstChild(Config.SelectedBoss)
-            if target and target:FindFirstChild("HumanoidRootPart") then
-                TpTo(target.HumanoidRootPart.CFrame)
-            else
-                Fluent:Notify({Title = "Ошибка", Content = "Босс не найден на сервере.", Duration = 3})
-            end
-        end)
-    end
-})
-
--- ==================== 3. ФРУКТЫ И СУНДУКИ ====================
-
+-- 3. СУНДУКИ И ФРУКТЫ
 Tabs.Items:AddToggle("AutoChestToggle", {
-    Title = "Авто-сбор сундуков (Auto Chest)",
+    Title = "Авто-сбор сундуков",
     Default = false,
     Callback = function(Value)
         Config.AutoChest = Value
@@ -264,74 +232,24 @@ Tabs.Items:AddToggle("AutoFruitCollect", {
     end
 })
 
--- ==================== 4. СТАТЫ И ПРОЧЕЕ ====================
-
-Tabs.Stats:AddDropdown("StatSelect", {
-    Title = "Выбор стата для прокачки",
-    Values = {"Melee", "Defense", "Sword", "Gun", "Demon Fruit"},
-    Default = 1,
-    Callback = function(Value)
-        Config.SelectedStat = Value
-    end
-})
-
-Tabs.Stats:AddToggle("AutoStatToggle", {
-    Title = "Авто-вложение очков в выбранный стат",
-    Default = false,
-    Callback = function(Value)
-        Config.AutoStat = Value
-        task.spawn(function()
-            while Config.AutoStat do
-                task.wait(1)
-                pcall(function()
-                    Remotes.CommF_:InvokeServer("AddPoint", Config.SelectedStat, 3)
-                end)
-            end
-        end)
-    end
-})
-
--- ==================== 5. ТЕЛЕПОРТЫ ====================
-
-local Seas = {"Первое море", "Второе море (Кафе)", "Третье море (Особняк)"}
-Tabs.Teleport:AddDropdown("SeaTeleport", {
-    Title = "Смена морей",
-    Values = Seas,
-    Default = 1,
-    Callback = function(Value)
-        if Value == "Первое море" then
-            Remotes.CommF_:InvokeServer("TravelMain")
-        elseif Value == "Второе море (Кафе)" then
-            Remotes.CommF_:InvokeServer("TravelDressrosa")
-        elseif Value == "Третье море (Особняк)" then
-            Remotes.CommF_:InvokeServer("TravelZou")
-        end
-    end
-})
-
--- ==================== 6. НАСТРОЙКИ И СКРЫТИЕ ИНТЕРФЕЙСА ====================
-
+-- 4. НАСТРОЙКИ
 Tabs.Settings:AddButton({
-    Title = "Закрыть / Выгрузить скрипт полностью",
-    Description = "Полностью убирает худ и останавливает все потоки",
+    Title = "Выгрузить скрипт",
     Callback = function()
-        -- Отключаем весь автофарм
         Config.AutoFarmLevel = false
         Config.AutoBoss = false
         Config.AutoChest = false
         Config.AutoFruitCollect = false
-        Config.AutoStat = false
         Config.Noclip = false
-        
         Fluent:Destroy()
     end
 })
 
--- Уведомление об успешной загрузке
 Fluent:Notify({
-    Title = "Delta Hub активирован",
-    Content = "Все функции успешно инициализированы!",
-    Duration = 4
+    Title = "Delta Hub Debug",
+    Content = "Скрипт успешно отработал и запущен!",
+    Duration = 5
 })
 
+print("[Delta Hub] Инициализация завершена успешно.")
 SaveManager:LoadAutoloadConfig()
