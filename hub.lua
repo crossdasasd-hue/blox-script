@@ -11,7 +11,9 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Remotes = ReplicatedStorage:FindFirstChild("Remotes")
+
+-- Безопасный поиск Remotes
+local Remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:FindFirstChild("Remete")
 
 -- Главный контейнер
 local SG = Instance.new("ScreenGui")
@@ -57,7 +59,7 @@ TitleLbl.BackgroundTransparency = 1
 TitleLbl.Position = UDim2.new(0, 15, 0, 0)
 TitleLbl.Size = UDim2.new(1, -100, 1, 0)
 TitleLbl.Font = Enum.Font.GothamBold
-TitleLbl.Text = "⚡ Blox Fruits Noclip + Smart Skill 1"
+TitleLbl.Text = "⚡ Blox Fruits Fixed Hub (Draggable)"
 TitleLbl.TextColor3 = Color3.fromRGB(220, 200, 255)
 TitleLbl.TextSize = 14
 TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -186,7 +188,7 @@ end
 -- ==================== СИСТЕМА КВЕСТОВ ПЕРВОГО МОРЯ ====================
 local function GetQuestDetails()
     local success, lv = pcall(function() return LocalPlayer.Data.Level.Value end)
-    if not success or not lv then return nil, nil, nil end
+    if not success or not lv then return "BanditQuest1", 1, "Bandit" end
 
     if lv >= 1 and lv <= 9 then return "BanditQuest1", 1, "Bandit"
     elseif lv >= 10 and lv <= 14 then return "JungleQuest", 1, "Monkey"
@@ -202,13 +204,16 @@ end
 
 local function HasQuest()
     local success, val = pcall(function()
-        local questFrame = LocalPlayer.PlayerGui.Main.Quest
-        return questFrame.Visible
+        local mainGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
+        if mainGui and mainGui:FindFirstChild("Quest") then
+            return mainGui.Quest.Visible
+        end
+        return false
     end)
     return success and val or false
 end
 
--- ==================== АВТОФАРМ С УМНЫМ СКИЛЛОМ 1 ====================
+-- ==================== ИСПРАВЛЕННЫЙ АВТОФАРМ ====================
 CreateToggle("Умный Авто-фарм (Noclip Сверху + Скилл 1)", false, function(state)
     Config.AutoFarm = state
     task.spawn(function()
@@ -216,30 +221,31 @@ CreateToggle("Умный Авто-фарм (Noclip Сверху + Скилл 1)"
         local hasUsedSkill = false
 
         while Config.AutoFarm do
-            task.wait(0.15)
+            task.wait(0.2)
             pcall(function()
                 local char = LocalPlayer.Character
                 if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") then return end
                 local hrp = char.HumanoidRootPart
                 local humanoid = char.Humanoid
 
-                -- Если персонаж умер (здоровье 0) — сбрасываем флаг скилла, чтобы после спавна он снова его прожимал
                 if humanoid.Health <= 0 then
                     hasUsedSkill = false
                     lastTarget = nil
                     return
                 end
 
-                -- 1. Берем квест, если его нет
+                -- 1. Авто-взятие квеста через CommF_
                 if not HasQuest() then
                     local qName, qId, _ = GetQuestDetails()
                     if qName and Remotes and Remotes:FindFirstChild("CommF_") then
-                        Remotes.CommF_:InvokeServer("RequestQuest", qName, qId)
-                        task.wait(0.5)
+                        pcall(function()
+                            Remotes.CommF_:InvokeServer("RequestQuest", qName, qId)
+                        end)
+                        task.wait(0.8)
                     end
                 end
 
-                -- 2. Ищем моба
+                -- 2. Поиск моба
                 local enemies = workspace:FindFirstChild("Enemies")
                 local target = nil
                 local _, _, targetName = GetQuestDetails()
@@ -249,10 +255,22 @@ CreateToggle("Умный Авто-фарм (Noclip Сверху + Скилл 1)"
                         local eHum = enemy:FindFirstChild("Humanoid")
                         local eHrp = enemy:FindFirstChild("HumanoidRootPart")
                         if eHum and eHrp and eHum.Health > 0 then
-                            if not targetName or string.find(enemy.Name, targetName) then
+                            if not targetName or string.find(enemy.Name, targetName) or string.find(enemy.Name, "Bandit") then
                                 target = enemy
                                 break
                             end
+                        end
+                    end
+                end
+
+                -- Если конкретный по квесту не найден, цепляем любого живого врага поблизости
+                if not target and enemies then
+                    for _, enemy in pairs(enemies:GetChildren()) do
+                        local eHum = enemy:FindFirstChild("Humanoid")
+                        local eHrp = enemy:FindFirstChild("HumanoidRootPart")
+                        if eHum and eHrp and eHum.Health > 0 then
+                            target = enemy
+                            break
                         end
                     end
                 end
@@ -261,12 +279,11 @@ CreateToggle("Умный Авто-фарм (Noclip Сверху + Скилл 1)"
                 if target and target:FindFirstChild("HumanoidRootPart") then
                     local tHrp = target.HumanoidRootPart
                     
-                    -- Держим режим Noclip и зависаем сверху
+                    -- Зависаем строго сверху на ноуклипе
                     humanoid.PlatformStand = true
                     hrp.CFrame = tHrp.CFrame * CFrame.new(0, 15, 0)
                     hrp.Velocity = Vector3.new(0, 0, 0)
 
-                    -- Проверяем смену цели или возрождение (если цель новая, сбрасываем флаг для повторного удара скиллом 1)
                     if lastTarget ~= target then
                         lastTarget = target
                         hasUsedSkill = false
@@ -287,18 +304,22 @@ CreateToggle("Умный Авто-фарм (Noclip Сверху + Скилл 1)"
                         end
                     end
 
-                    -- Если скилл ещё не прожимался для этого моба/после смерти — прожимаем ровно 1 раз
+                    -- Прожимаем скилл 1 один раз
                     if tool and not hasUsedSkill then
                         hasUsedSkill = true
-                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.One, false, game)
-                        task.wait(0.05)
-                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, false, game)
-                        task.wait(0.2) -- небольшая пауза после скилла
+                        pcall(function()
+                            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.One, false, game)
+                            task.wait(0.05)
+                            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, false, game)
+                        end)
+                        task.wait(0.2)
                     end
 
-                    -- Обычные удары оружием дальше
+                    -- Обычная атака
                     if tool then
-                        tool:Activate()
+                        pcall(function()
+                            tool:Activate()
+                        end)
                     end
                 else
                     humanoid.PlatformStand = false
@@ -307,7 +328,6 @@ CreateToggle("Умный Авто-фарм (Noclip Сверху + Скилл 1)"
             end)
         end
         
-        -- Выключение
         pcall(function()
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
                 LocalPlayer.Character.Humanoid.PlatformStand = false
@@ -316,7 +336,7 @@ CreateToggle("Умный Авто-фарм (Noclip Сверху + Скилл 1)"
     end)
 end)
 
--- Глобальный Noclip (от стен)
+-- Глобальный Noclip (от стен и столкновений)
 CreateToggle("Анти-застревание (Noclip)", false, function(state)
     Config.Noclip = state
 end)
@@ -331,7 +351,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Вспомогательные функции
+-- Дополнительные функции
 CreateToggle("Авто-Хаки (Buso Haki)", false, function(state)
     Config.AutoBuso = state
     task.spawn(function()
@@ -383,6 +403,6 @@ end)
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "⚡ God Mode Hub",
-    Text = "Умный скилл 1 и авто-фарм настроены!",
+    Text = "Скрипт полностью исправлен и запущен!",
     Duration = 4
 })
