@@ -1,97 +1,158 @@
--- Защита от дублирования
-if _G.SimpleBloxFruitsHub then
-    _G.SimpleBloxFruitsHub:Destroy()
+-- Защита от повторного открытия
+if _G.QuantumStyleHub then
+    pcall(function() _G.QuantumStyleHub:Destroy() end)
 end
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local TweenService = game:GetService("TweenService")
 
--- Создаем свой собственный графический интерфейс (HUD), который точно не зависнет
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SimpleBloxFruitsHub"
-ScreenGui.Parent = PlayerGui
-ScreenGui.ResetOnSpawn = false
-_G.SimpleBloxFruitsHub = ScreenGui
+-- Создаем главный контейнер (ScreenGui)
+local SG = Instance.new("ScreenGui")
+SG.Name = "QuantumStyleHub"
+SG.ZIndexBehavior = Enum.ZIndexBehavior.Global
+SG.ResetOnSpawn = false
+SG.IgnoreGuiInset = true
 
--- Главное окно
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 350, 0, 280)
-MainFrame.Position = UDim2.new(0.5, -175, 0.5, -140)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.BorderSizePixel = 0
-MainFrame.Parent = ScreenGui
+-- Функция защиты от обнаружения / привязки к CoreGui (если поддерживает экзекутор)
+pcall(function()
+    if gethui then
+        SG.Parent = gethui()
+    elseif syn and syn.protect_gui then
+        syn.protect_gui(SG)
+        SG.Parent = game:GetService("CoreGui")
+    else
+        SG.Parent = CoreGui
+    end
+end)
+if not SG.Parent then
+    SG.Parent = PlayerGui
+end
+_G.QuantumStyleHub = SG
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 8)
-UICorner.Parent = MainFrame
+-- Затемнение фона
+local Backdrop = Instance.new("Frame")
+Backdrop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Backdrop.BackgroundTransparency = 0.5
+Backdrop.Size = UDim2.new(1, 0, 1, 0)
+Backdrop.Parent = SG
 
--- Заголовок
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-Title.Text = "⚡ Delta Hub: Blox Fruits"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 16
-Title.Font = Enum.Font.SourceSansBold
-Title.Parent = MainFrame
+-- Главное окно (в стиле Quantum Onyx: фиолетово-темные тона)
+local W, H = 480, 320
+local Card = Instance.new("Frame")
+Card.AnchorPoint = Vector2.new(0.5, 0.5)
+Card.Position = UDim2.new(0.5, 0, 0.5, 0)
+Card.Size = UDim2.new(0, W, 0, H)
+Card.BackgroundColor3 = Color3.fromRGB(15, 12, 24)
+Card.ClipsDescendants = true
+Card.Parent = SG
 
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 8)
-TitleCorner.Parent = Title
+local CardCorner = Instance.new("UICorner")
+CardCorner.CornerRadius = UDim.new(0, 12)
+CardCorner.Parent = Card
 
--- Кнопка закрытия
+local CardStroke = Instance.new("UIStroke")
+CardStroke.Color = Color3.fromRGB(120, 60, 220)
+CardStroke.Thickness = 1.5
+CardStroke.Parent = Card
+
+-- Шапка окна
+local Header = Instance.new("Frame")
+Header.BackgroundColor3 = Color3.fromRGB(22, 16, 36)
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.Parent = Card
+
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
+
+local TitleLbl = Instance.new("TextLabel")
+TitleLbl.BackgroundTransparency = 1
+TitleLbl.Position = UDim2.new(0, 15, 0, 0)
+TitleLbl.Size = UDim2.new(1, -50, 1, 0)
+TitleLbl.Font = Enum.Font.GothamBold
+TitleLbl.Text = "⚡ Blox Fruits Hub — Delta Edition"
+TitleLbl.TextColor3 = Color3.fromRGB(220, 200, 255)
+TitleLbl.TextSize = 14
+TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+TitleLbl.Parent = Header
+
+-- Кнопка закрытия (крестик)
 local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.BackgroundTransparency = 1
 CloseBtn.Position = UDim2.new(1, -35, 0, 5)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CloseBtn.Text = "X"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.TextSize = 14
-CloseBtn.Font = Enum.Font.SourceSansBold
-CloseBtn.Parent = Title
-
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 6)
-CloseCorner.Parent = CloseBtn
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(200, 80, 80)
+CloseBtn.TextSize = 16
+CloseBtn.Parent = Header
 
 CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-    _G.SimpleBloxFruitsHub = nil
+    SG:Destroy()
+    _G.QuantumStyleHub = nil
 end)
 
--- Кнопка Фарма Уровня
-local FarmBtn = Instance.new("TextButton")
-FarmBtn.Size = UDim2.new(0, 310, 0, 45)
-FarmBtn.Position = UDim2.new(0, 20, 0, 60)
-FarmBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-FarmBtn.Text = "Авто-фарм уровня: ВЫКЛ"
-FarmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-FarmBtn.TextSize, FarmBtn.Font = 14, Enum.Font.SourceSansBold
-FarmBtn.Parent = MainFrame
+-- Контейнер для кнопок функций
+local ContentFrame = Instance.new("ScrollingFrame")
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Position = UDim2.new(0, 15, 0, 55)
+ContentFrame.Size = UDim2.new(1, -30, 1, -65)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 250)
+ContentFrame.ScrollBarThickness = 4
+ContentFrame.Parent = Card
 
-Instance.new("UICorner", FarmBtn).CornerRadius = UDim.new(0, 6)
+local UIList = Instance.new("UIListLayout")
+UIList.Padding = UDim.new(0, 10)
+UIList.Parent = ContentFrame
 
-local farming = false
-FarmBtn.MouseButton1Click:Connect(function()
-    farming = not farming
-    if farming then
-        FarmBtn.Text = "Авто-фарм уровня: ВКЛ"
-        FarmBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-    else
-        FarmBtn.Text = "Авто-фарм уровня: ВЫКЛ"
-        FarmBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-    end
+-- Функция создания красивой кнопки-переключателя (Toggle)
+local function CreateToggle(titleText, callback)
+    interpretorState = false
     
-    -- Логика фарма
+    local ToggleBtn = Instance.new("TextButton")
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+    ToggleBtn.Size = UDim2.new(1, 0, 0, 42)
+    ToggleBtn.Font = Enum.Font.GothamMedium
+    ToggleBtn.Text = "   " .. titleText .. ": [ ВЫКЛ ]"
+    ToggleBtn.TextColor3 = Color3.fromRGB(200, 180, 240)
+    ToggleBtn.TextSize = 12
+    ToggleBtn.TextXAlignment = Enum.TextXAlignment.Left
+    ToggleBtn.Parent = ContentFrame
+    
+    Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
+    
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = Color3.fromRGB(90, 40, 170)
+    Stroke.Thickness = 1
+    Stroke.Parent = ToggleBtn
+
+    local active = false
+    ToggleBtn.MouseButton1Click:Connect(function()
+        active = not active
+        if active then
+            ToggleBtn.Text = "   " .. titleText .. ": [ ВКЛ ]"
+            ToggleBtn.TextColor3 = Color3.fromRGB(100, 255, 140)
+            Stroke.Color = Color3.fromRGB(80, 220, 110)
+        else
+            ToggleBtn.Text = "   " .. titleText .. ": [ ВЫКЛ ]"
+            ToggleBtn.TextColor3 = Color3.fromRGB(200, 180, 240)
+            Stroke.Color = Color3.fromRGB(90, 40, 170)
+        end
+        callback(active)
+    end)
+end
+
+-- Добавляем нужные функции фарминга прямо в этот худ:
+CreateToggle("Авто-фарм уровня и квестов", function(state)
+    _G.AutoFarm = state
     task.spawn(function()
-        while farming do
+        while _G.AutoFarm do
             task.wait(0.2)
             pcall(function()
                 local enemies = workspace:FindFirstChild("Enemies")
                 if enemies then
                     for _, enemy in pairs(enemies:GetChildren()) do
-                        if not farming then break end
+                        if not _G.AutoFarm then break end
                         local hrp = enemy:FindFirstChild("HumanoidRootPart")
                         local hum = enemy:FindFirstChild("Humanoid")
                         if hrp and hum and hum.Health > 0 then
@@ -106,36 +167,38 @@ FarmBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
--- Кнопка Анти-застревания (Noclip)
-local NoclipBtn = Instance.new("TextButton")
-NoclipBtn.Size = UDim2.new(0, 310, 0, 45)
-NoclipBtn.Position = UDim2.new(0, 20, 0, 120)
-NoclipBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-NoclipBtn.Text = "Noclip (Сквозь стены): ВЫКЛ"
-NoclipBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-NoclipBtn.TextSize, NoclipBtn.Font = 14, Enum.Font.SourceSansBold
-NoclipBtn.Parent = MainFrame
-
-Instance.new("UICorner", NoclipBtn).CornerRadius = UDim.new(0, 6)
-
-local noclipActive = false
-NoclipBtn.MouseButton1Click:Connect(function()
-    noclipActive = not noclipActive
-    NoclipBtn.Text = noclipActive and "Noclip (Сквозь стены): ВКЛ" or "Noclip (Сквозь стены): ВЫКЛ"
-    NoclipBtn.BackgroundColor3 = noclipActive and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(100, 100, 100)
+CreateToggle("Анти-застревание (Noclip)", function(state)
+    _G.Noclip = state
 end)
 
 game:GetService("RunService").Stepped:Connect(function()
-    if noclipActive and LocalPlayer.Character then
+    if _G.Noclip and LocalPlayer.Character then
         for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
             if part:IsA("BasePart") then part.CanCollide = false end
         end
     end
 end)
 
--- Уведомление об успешном открытии
+CreateToggle("Авто-сбор сундуков", function(state)
+    _G.AutoChest = state
+    task.spawn(function()
+        while _G.AutoChest do
+            task.wait(0.3)
+            pcall(function()
+                for _, obj in pairs(workspace:GetChildren()) do
+                    if not _G.AutoChest then break end
+                    if string.find(obj.Name, "Chest") and obj:IsA("Part") then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = obj.CFrame
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+-- Уведомление об успешном запуске
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "⚡ Delta Hub",
-    Text = "Интерфейс успешно отрисован!",
+    Title = "Quantum HUD",
+    Text = "Интерфейс успешно загружен!",
     Duration = 3
 })
