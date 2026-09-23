@@ -57,7 +57,7 @@ TitleLbl.BackgroundTransparency = 1
 TitleLbl.Position = UDim2.new(0, 15, 0, 0)
 TitleLbl.Size = UDim2.new(1, -100, 1, 0)
 TitleLbl.Font = Enum.Font.GothamBold
-TitleLbl.Text = "⚡ Blox Fruits Pro Hub (Draggable)"
+TitleLbl.Text = "⚡ Blox Fruits Noclip + Quest + Skill 1"
 TitleLbl.TextColor3 = Color3.fromRGB(220, 200, 255)
 TitleLbl.TextSize = 14
 TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -200,30 +200,40 @@ local function GetQuestDetails()
     else return "MarineQuest", 1, "Trainee" end
 end
 
--- ==================== АВТОФАРМ (КВЕСТ + НОУКЛИП СВЕРХУ + АКТИВНЫЙ УДАР) ====================
-CreateToggle("Умный Авто-фарм (Квест + Атака)", false, function(state)
+-- Проверка активного квеста через интерфейс игры
+local function HasQuest()
+    local success, val = pcall(function()
+        local questFrame = LocalPlayer.PlayerGui.Main.Quest
+        return questFrame.Visible
+    end)
+    return success and val or false
+end
+
+-- ==================== АВТОФАРМ (КВЕСТ + НОУКЛИП СВЕРХУ + СКИЛЛ 1 + УДАР) ====================
+CreateToggle("Умный Авто-фарм (Noclip Сверху + Квест + Скилл 1)", false, function(state)
     Config.AutoFarm = state
     task.spawn(function()
         while Config.AutoFarm do
-            task.wait(0.1)
+            task.wait(0.2)
             pcall(function()
                 local char = LocalPlayer.Character
-                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+                if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") then return end
                 local hrp = char.HumanoidRootPart
+                local humanoid = char.Humanoid
 
-                -- 1. Авто-взятие квеста
-                local questGui = LocalPlayer.PlayerGui:FindFirstChild("Main") and LocalPlayer.PlayerGui.Main:FindFirstChild("Quest")
-                local hasActiveQuest = questGui and questGui.Visible
-                local questName, questId, targetName = GetQuestDetails()
-
-                if not hasActiveQuest and questName and Remotes and Remotes:FindFirstChild("CommF_") then
-                    Remotes.CommF_:InvokeServer("RequestQuest", questName, questId)
-                    task.wait(0.5)
+                -- 1. Берем квест, если его нет
+                if not HasQuest() then
+                    local qName, qId, _ = GetQuestDetails()
+                    if qName and Remotes and Remotes:FindFirstChild("CommF_") then
+                        Remotes.CommF_:InvokeServer("RequestQuest", qName, qId)
+                        task.wait(0.6)
+                    end
                 end
 
-                -- 2. Поиск моба
+                -- 2. Ищем моба
                 local enemies = workspace:FindFirstChild("Enemies")
                 local target = nil
+                local _, _, targetName = GetQuestDetails()
 
                 if enemies then
                     for _, enemy in pairs(enemies:GetChildren()) do
@@ -238,22 +248,18 @@ CreateToggle("Умный Авто-фарм (Квест + Атака)", false, fu
                     end
                 end
 
-                -- 3. Зависаем сверху и бьем
-                if target and target:FindFirstChild("HumanoidRootPart") and target:FindFirstChild("Humanoid") then
+                -- 3. Если есть моб — зависаем над ним в NoClip и бьем (включая скилл 1)
+                if target and target:FindFirstChild("HumanoidRootPart") then
                     local tHrp = target.HumanoidRootPart
-                    local tHum = target.Humanoid
                     
-                    tHrp.CanCollide = false
-                    tHum.WalkSpeed = 0
+                    -- Отключаем гравитацию и падение, чтобы не падать на моба
+                    humanoid.PlatformStand = true
                     
-                    -- Висим над мобом
-                    hrp.CFrame = tHrp.CFrame * CFrame.new(0, 12, 0)
-                    
-                    if char:FindFirstChild("Humanoid") then
-                        char.Humanoid.PlatformStand = true
-                    end
+                    -- Фиксируем позицию строго сверху на высоте 15 блоков (полный Noclip-полёт)
+                    hrp.CFrame = tHrp.CFrame * CFrame.new(0, 15, 0)
+                    hrp.Velocity = Vector3.new(0, 0, 0)
 
-                    -- Достаем оружие / инструмент в руки
+                    -- Достаем оружие в руки
                     local tool = char:FindFirstChildOfClass("Tool")
                     if not tool then
                         local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
@@ -268,22 +274,20 @@ CreateToggle("Умный Авто-фарм (Квест + Атака)", false, fu
                         end
                     end
 
-                    -- Активная атака моба
+                    -- Атака (Клик + Скилл 1)
                     if tool then
                         tool:Activate()
-                        pcall(function()
-                            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-                            task.wait(0.05)
-                            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-                        end)
+                        -- Прожимаем навык/скилл "1"
+                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.One, false, game)
+                        task.wait(0.05)
+                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, false, game)
                     end
                 else
-                    if char:FindFirstChild("Humanoid") then
-                        char.Humanoid.PlatformStand = false
-                    end
+                    humanoid.PlatformStand = false
                 end
             end)
         end
+        -- Возвращаем нормальное состояние при выключении
         pcall(function()
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
                 LocalPlayer.Character.Humanoid.PlatformStand = false
@@ -292,7 +296,7 @@ CreateToggle("Умный Авто-фарм (Квест + Атака)", false, fu
     end)
 end)
 
--- Глобальный Noclip
+-- Глобальный Noclip (чтобы проходить сквозь стены)
 CreateToggle("Анти-застревание (Noclip)", false, function(state)
     Config.Noclip = state
 end)
@@ -358,7 +362,7 @@ end)
 
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "⚡ Pro Hub Loaded",
-    Text = "Персонаж теперь берет квест и атакует мобов!",
+    Title = "⚡ God Mode Hub",
+    Text = "Полет на ноуклипе сверху и авто-скилл 1 активированы!",
     Duration = 4
 })
