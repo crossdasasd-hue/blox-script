@@ -1,6 +1,6 @@
 -- Защита от дублирования
-if _G.QuantumPerfectHub then
-    pcall(function() _G.QuantumPerfectHub:Destroy() end)
+if _G.QuantumWorkingHub then
+    pcall(function() _G.QuantumWorkingHub:Destroy() end)
 end
 
 local Players = game:GetService("Players")
@@ -13,7 +13,7 @@ local Remotes = ReplicatedStorage:FindFirstChild("Remotes")
 
 -- Главный контейнер
 local SG = Instance.new("ScreenGui")
-SG.Name = "QuantumPerfectHub"
+SG.Name = "QuantumWorkingHub"
 SG.ZIndexBehavior = Enum.ZIndexBehavior.Global
 SG.ResetOnSpawn = false
 SG.IgnoreGuiInset = true
@@ -24,7 +24,7 @@ pcall(function()
     else SG.Parent = PlayerGui end
 end)
 if not SG.Parent then SG.Parent = PlayerGui end
-_G.QuantumPerfectHub = SG
+_G.QuantumWorkingHub = SG
 
 -- ==================== ПРИВЕТСТВИЕ (HELLO / ПРИВЕТ) ====================
 local IntroGui = Instance.new("Frame")
@@ -82,7 +82,7 @@ TitleLbl.BackgroundTransparency = 1
 TitleLbl.Position = UDim2.new(0, 15, 0, 0)
 TitleLbl.Size = UDim2.new(1, -100, 1, 0)
 TitleLbl.Font = Enum.Font.GothamBold
-TitleLbl.Text = "⚡ Blox Fruits Perfect Hub"
+TitleLbl.Text = "⚡ Blox Fruits Pro Hub"
 TitleLbl.TextColor3 = Color3.fromRGB(220, 200, 255)
 TitleLbl.TextSize = 14
 TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -103,7 +103,7 @@ local UIList = Instance.new("UIListLayout")
 UIList.Padding = UDim.new(0, 8)
 UIList.Parent = ContentFrame
 
--- Кнопки управления шапкой
+-- Кнопки сворачивания и закрытия
 local ToggleMenuBtn = Instance.new("TextButton")
 ToggleMenuBtn.BackgroundTransparency = 1
 ToggleMenuBtn.Position = UDim2.new(1, -70, 0, 5)
@@ -136,7 +136,7 @@ end)
 
 CloseBtn.MouseButton1Click:Connect(function()
     SG:Destroy()
-    _G.QuantumPerfectHub = nil
+    _G.QuantumWorkingHub = nil
 end)
 
 local Config = {
@@ -175,39 +175,80 @@ local function CreateToggle(titleText, defaultState, callback)
     end)
 end
 
--- ==================== РАБОЧИЕ ФУНКЦИИ ====================
+-- ==================== ФУНКЦИИ ФАРМА И КВЕСТОВ ====================
 
--- Идеальный автофарм (универсальный поиск ближайшего моба)
-CreateToggle("Идеальный авто-фарм мобов", false, function(state)
+-- Функция определения квеста по уровню
+local function GetQuestDetails()
+    local success, lv = pcall(function() return LocalPlayer.Data.Level.Value end)
+    if not success or not lv then return nil, nil, nil end
+
+    -- Примеры для 1-го моря (можно расширять)
+    if lv >= 1 and lv <= 9 then
+        return "BanditQuest1", 1, "Bandit"
+    elseif lv >= 10 and lv <= 14 then
+        return "JungleQuest", 1, "Monkey"
+    elseif lv >= 15 and lv <= 29 then
+        return "JungleQuest", 2, "Gorilla"
+    elseif lv >= 30 and lv <= 39 then
+        return "BuggyQuest1", 1, "Pirate"
+    elseif lv >= 40 and lv <= 59 then
+        return "BuggyQuest1", 2, "Brute"
+    elseif lv >= 60 and lv <= 74 then
+        return "DesertQuest", 1, "Desert Bandit"
+    elseif lv >= 75 and lv <= 89 then
+        return "DesertQuest", 2, "Desert Officer"
+    elseif lv >= 90 and lv <= 99 then
+        return "SnowQuest", 1, "Snow Bandit"
+    elseif lv >= 100 and lv <= 119 then
+        return "SnowQuest", 2, "Snowman"
+    else
+        -- Универсальный режим, если уровень выше
+        return nil, nil, nil
+    end
+end
+
+-- Авто-фарм с автоматическим взятием квестов и уроном по мобам
+CreateToggle("Авто-фарм (Квесты + Урон)", false, function(state)
     Config.AutoFarm = state
     task.spawn(function()
         while Config.AutoFarm do
-            task.wait(0.1)
+            task.wait(0.2)
             pcall(function()
                 local char = LocalPlayer.Character
                 if not char or not char:FindFirstChild("HumanoidRootPart") then return end
                 local hrp = char.HumanoidRootPart
 
-                local target = nil
-                local shortestDistance = math.huge
+                -- Проверяем, есть ли активный квест на экране
+                local questGui = LocalPlayer.PlayerGui:FindFirstChild("Main") and LocalPlayer.PlayerGui.Main:FindFirstChild("Quest")
+                local hasActiveQuest = questGui and questGui.Visible
 
-                -- Ищем живых врагов в игре
+                local questName, questId, targetName = GetQuestDetails()
+
+                if not hasActiveQuest and questName and Remotes and Remotes:FindFirstChild("CommF_") then
+                    -- Берем квест автоматически
+                    Remotes.CommF_:InvokeServer("RequestQuest", questName, questId)
+                    task.wait(0.5)
+                end
+
+                -- Ищем нужного моба в папке Enemies
                 local enemies = workspace:FindFirstChild("Enemies")
+                local target = nil
+
                 if enemies then
                     for _, enemy in pairs(enemies:GetChildren()) do
-                        local eHrp = enemy:FindFirstChild("HumanoidRootPart")
                         local eHum = enemy:FindFirstChild("Humanoid")
-                        if eHrp and eHum and eHum.Health > 0 then
-                            local dist = (hrp.Position - eHrp.Position).Magnitude
-                            if dist < shortestDistance then
-                                shortestDistance = dist
+                        local eHrp = enemy:FindFirstChild("HumanoidRootPart")
+                        if eHum and eHrp and eHum.Health > 0 then
+                            -- Если имя совпадает с целью квеста ИЛИ если квест не найден, берем любого живого
+                            if not targetName or string.find(enemy.Name, targetName) then
                                 target = enemy
+                                break
                             end
                         end
                     end
                 end
 
-                -- Если нашли моба — телепортируемся к нему и бьем
+                -- Если моб найден — телепортируемся и бьем
                 if target and target:FindFirstChild("HumanoidRootPart") and target:FindFirstChild("Humanoid") then
                     local tHrp = target.HumanoidRootPart
                     local tHum = target.Humanoid
@@ -215,10 +256,10 @@ CreateToggle("Идеальный авто-фарм мобов", false, function(
                     tHrp.CanCollide = false
                     tHum.WalkSpeed = 0
                     
-                    -- Держимся чуть выше моба, чтобы он по нам не попадал
-                    hrp.CFrame = tHrp.CFrame * CFrame.new(0, 12, 0)
+                    -- Телепорт прямо над мобом
+                    hrp.CFrame = tHrp.CFrame * CFrame.new(0, 10, 0)
                     
-                    -- Автоматическая активация оружия в руках
+                    -- Авто-атака инструментом в руках
                     local tool = char:FindFirstChildOfClass("Tool")
                     if tool then
                         tool:Activate()
@@ -229,7 +270,7 @@ CreateToggle("Идеальный авто-фарм мобов", false, function(
     end)
 end)
 
--- Авто-Хаки
+-- Остальные вспомогательные функции
 CreateToggle("Авто-Хаки (Buso Haki)", false, function(state)
     Config.AutoBuso = state
     task.spawn(function()
@@ -244,7 +285,6 @@ CreateToggle("Авто-Хаки (Buso Haki)", false, function(state)
     end)
 end)
 
--- Авто-сбор фруктов
 CreateToggle("Авто-сбор фруктов", false, function(state)
     Config.AutoFruit = state
     task.spawn(function()
@@ -262,7 +302,6 @@ CreateToggle("Авто-сбор фруктов", false, function(state)
     end)
 end)
 
--- Авто-сбор сундуков
 CreateToggle("Авто-сбор сундуков", false, function(state)
     Config.AutoChest = state
     task.spawn(function()
@@ -280,7 +319,6 @@ CreateToggle("Авто-сбор сундуков", false, function(state)
     end)
 end)
 
--- Авто-прокачка статов
 CreateToggle("Авто-прокачка статов (Melee)", false, function(state)
     Config.AutoStats = state
     task.spawn(function()
@@ -295,7 +333,6 @@ CreateToggle("Авто-прокачка статов (Melee)", false, function(s
     end)
 end)
 
--- Noclip (Анти-застревание)
 CreateToggle("Анти-застревание (Noclip)", false, function(state)
     Config.Noclip = state
 end)
@@ -310,7 +347,7 @@ end)
 
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "⚡ Perfect Hub",
-    Text = "Скрипт успешно запущен и готов к работе!",
+    Title = "⚡ Pro Hub Updated",
+    Text = "Система квестов и авто-фарма успешно обновлена!",
     Duration = 4
 })
