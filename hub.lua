@@ -1,6 +1,6 @@
 -- Защита от дублирования
-if _G.QuantumAdvancedHub then
-    pcall(function() _G.QuantumAdvancedHub:Destroy() end)
+if _G.QuantumPerfectHub then
+    pcall(function() _G.QuantumPerfectHub:Destroy() end)
 end
 
 local Players = game:GetService("Players")
@@ -13,7 +13,7 @@ local Remotes = ReplicatedStorage:FindFirstChild("Remotes")
 
 -- Главный контейнер
 local SG = Instance.new("ScreenGui")
-SG.Name = "QuantumAdvancedHub"
+SG.Name = "QuantumPerfectHub"
 SG.ZIndexBehavior = Enum.ZIndexBehavior.Global
 SG.ResetOnSpawn = false
 SG.IgnoreGuiInset = true
@@ -24,7 +24,7 @@ pcall(function()
     else SG.Parent = PlayerGui end
 end)
 if not SG.Parent then SG.Parent = PlayerGui end
-_G.QuantumAdvancedHub = SG
+_G.QuantumPerfectHub = SG
 
 -- ==================== ПРИВЕТСТВИЕ (HELLO / ПРИВЕТ) ====================
 local IntroGui = Instance.new("Frame")
@@ -54,7 +54,7 @@ task.spawn(function()
 end)
 
 -- ==================== ОСНОВНОЙ ХУД ====================
-local W, H = 520, 400
+local W, H = 520, 380
 local Card = Instance.new("Frame")
 Card.AnchorPoint = Vector2.new(0.5, 0.5)
 Card.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -73,6 +73,7 @@ CardStroke.Parent = Card
 local Header = Instance.new("Frame")
 Header.BackgroundColor3 = Color3.fromRGB(22, 16, 36)
 Header.Size = UDim2.new(1, 0, 0, 40)
+Header.ZIndex = 5
 Header.Parent = Card
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
 
@@ -81,13 +82,28 @@ TitleLbl.BackgroundTransparency = 1
 TitleLbl.Position = UDim2.new(0, 15, 0, 0)
 TitleLbl.Size = UDim2.new(1, -100, 1, 0)
 TitleLbl.Font = Enum.Font.GothamBold
-TitleLbl.Text = "⚡ Blox Fruits Ultimate Hub"
+TitleLbl.Text = "⚡ Blox Fruits Perfect Hub"
 TitleLbl.TextColor3 = Color3.fromRGB(220, 200, 255)
 TitleLbl.TextSize = 14
 TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+TitleLbl.ZIndex = 6
 TitleLbl.Parent = Header
 
--- Кнопки сворачивания и закрытия
+-- Контейнер для скролла
+local ContentFrame = Instance.new("ScrollingFrame")
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Position = UDim2.new(0, 15, 0, 50)
+ContentFrame.Size = UDim2.new(1, -30, 1, -60)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 550)
+ContentFrame.ScrollBarThickness = 4
+ContentFrame.ZIndex = 2
+ContentFrame.Parent = Card
+
+local UIList = Instance.new("UIListLayout")
+UIList.Padding = UDim.new(0, 8)
+UIList.Parent = ContentFrame
+
+-- Кнопки управления шапкой
 local ToggleMenuBtn = Instance.new("TextButton")
 ToggleMenuBtn.BackgroundTransparency = 1
 ToggleMenuBtn.Position = UDim2.new(1, -70, 0, 5)
@@ -96,6 +112,7 @@ ToggleMenuBtn.Font = Enum.Font.GothamBold
 ToggleMenuBtn.Text = "_"
 ToggleMenuBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 ToggleMenuBtn.TextSize = 16
+ToggleMenuBtn.ZIndex = 6
 ToggleMenuBtn.Parent = Header
 
 local CloseBtn = Instance.new("TextButton")
@@ -106,34 +123,21 @@ CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.Text = "✕"
 CloseBtn.TextColor3 = Color3.fromRGB(200, 80, 80)
 CloseBtn.TextSize = 16
+CloseBtn.ZIndex = 6
 CloseBtn.Parent = Header
 
 local menuVisible = true
 ToggleMenuBtn.MouseButton1Click:Connect(function()
     menuVisible = not menuVisible
-    for _, child in pairs(Card:GetChildren()) do
-        if child ~= Header then child.Visible = menuVisible end
-    end
+    ContentFrame.Visible = menuVisible
     Card.Size = menuVisible and UDim2.new(0, W, 0, H) or UDim2.new(0, W, 0, 40)
+    ToggleMenuBtn.Text = menuVisible and "_" or "+"
 end)
 
 CloseBtn.MouseButton1Click:Connect(function()
     SG:Destroy()
-    _G.QuantumAdvancedHub = nil
+    _G.QuantumPerfectHub = nil
 end)
-
--- Скролл с функциями
-local ContentFrame = Instance.new("ScrollingFrame")
-ContentFrame.BackgroundTransparency = 1
-ContentFrame.Position = UDim2.new(0, 15, 0, 50)
-ContentFrame.Size = UDim2.new(1, -30, 1, -60)
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 650)
-ContentFrame.ScrollBarThickness = 4
-ContentFrame.Parent = Card
-
-local UIList = Instance.new("UIListLayout")
-UIList.Padding = UDim.new(0, 8)
-UIList.Parent = ContentFrame
 
 local Config = {
     AutoFarm = false,
@@ -142,7 +146,6 @@ local Config = {
     AutoFruit = false,
     AutoBuso = false,
     AutoStats = false,
-    BringMobs = true
 }
 
 local function CreateToggle(titleText, defaultState, callback)
@@ -154,6 +157,7 @@ local function CreateToggle(titleText, defaultState, callback)
     ToggleBtn.Text = "   " .. titleText .. ": [ " .. (state and "ВКЛ" or "ВЫКЛ") .. " ]"
     ToggleBtn.TextColor3 = state and Color3.fromRGB(100, 255, 140) or Color3.fromRGB(200, 180, 240)
     ToggleBtn.TextSize, ToggleBtn.TextXAlignment = 12, Enum.TextXAlignment.Left
+    ToggleBtn.ZIndex = 3
     ToggleBtn.Parent = ContentFrame
     
     Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
@@ -171,33 +175,53 @@ local function CreateToggle(titleText, defaultState, callback)
     end)
 end
 
--- 1. Умный фарм уровней и квестов
-CreateToggle("Умный авто-фарм (Квесты + Мобы)", false, function(state)
+-- ==================== РАБОЧИЕ ФУНКЦИИ ====================
+
+-- Идеальный автофарм (универсальный поиск ближайшего моба)
+CreateToggle("Идеальный авто-фарм мобов", false, function(state)
     Config.AutoFarm = state
     task.spawn(function()
         while Config.AutoFarm do
-            task.wait(0.2)
+            task.wait(0.1)
             pcall(function()
-                local questGui = LocalPlayer.PlayerGui.Main.Quest
-                if not questGui.Visible and Remotes and Remotes:FindFirstChild("CommF_") then
-                    Remotes.CommF_:InvokeServer("RequestQuest")
-                end
-                local enemiesFolder = workspace:FindFirstChild("Enemies")
-                if enemiesFolder then
-                    for _, enemy in pairs(enemiesFolder:GetChildren()) do
-                        if not Config.AutoFarm then break end
-                        local hum = enemy:FindFirstChild("Humanoid")
-                        local hrp = enemy:FindFirstChild("HumanoidRootPart")
-                        if hum and hrp and hum.Health > 0 then
-                            if Config.BringMobs then
-                                hrp.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-                                hrp.CanCollide = false
-                                hum.WalkSpeed = 0
+                local char = LocalPlayer.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+                local hrp = char.HumanoidRootPart
+
+                local target = nil
+                local shortestDistance = math.huge
+
+                -- Ищем живых врагов в игре
+                local enemies = workspace:FindFirstChild("Enemies")
+                if enemies then
+                    for _, enemy in pairs(enemies:GetChildren()) do
+                        local eHrp = enemy:FindFirstChild("HumanoidRootPart")
+                        local eHum = enemy:FindFirstChild("Humanoid")
+                        if eHrp and eHum and eHum.Health > 0 then
+                            local dist = (hrp.Position - eHrp.Position).Magnitude
+                            if dist < shortestDistance then
+                                shortestDistance = dist
+                                target = enemy
                             end
-                            LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(0, 10, 3)
-                            local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                            if tool and tool:FindFirstChild("Handle") then tool:Activate() end
                         end
+                    end
+                end
+
+                -- Если нашли моба — телепортируемся к нему и бьем
+                if target and target:FindFirstChild("HumanoidRootPart") and target:FindFirstChild("Humanoid") then
+                    local tHrp = target.HumanoidRootPart
+                    local tHum = target.Humanoid
+                    
+                    tHrp.CanCollide = false
+                    tHum.WalkSpeed = 0
+                    
+                    -- Держимся чуть выше моба, чтобы он по нам не попадал
+                    hrp.CFrame = tHrp.CFrame * CFrame.new(0, 12, 0)
+                    
+                    -- Автоматическая активация оружия в руках
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if tool then
+                        tool:Activate()
                     end
                 end
             end)
@@ -205,12 +229,12 @@ CreateToggle("Умный авто-фарм (Квесты + Мобы)", false, fu
     end)
 end)
 
--- 2. Авто-Хаки (Buso Haki)
+-- Авто-Хаки
 CreateToggle("Авто-Хаки (Buso Haki)", false, function(state)
     Config.AutoBuso = state
     task.spawn(function()
         while Config.AutoBuso do
-            task.wait(1)
+            task.wait(1.5)
             pcall(function()
                 if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Buso") and Remotes then
                     Remotes.CommF_:InvokeServer("Buso")
@@ -220,8 +244,8 @@ CreateToggle("Авто-Хаки (Buso Haki)", false, function(state)
     end)
 end)
 
--- 3. Авто-сбор фруктов с земли
-CreateToggle("Авто-сбор упавших фруктов", false, function(state)
+-- Авто-сбор фруктов
+CreateToggle("Авто-сбор фруктов", false, function(state)
     Config.AutoFruit = state
     task.spawn(function()
         while Config.AutoFruit do
@@ -238,12 +262,12 @@ CreateToggle("Авто-сбор упавших фруктов", false, function(
     end)
 end)
 
--- 4. Авто-сбор сундуков
+-- Авто-сбор сундуков
 CreateToggle("Авто-сбор сундуков", false, function(state)
     Config.AutoChest = state
     task.spawn(function()
         while Config.AutoChest do
-            task.wait(0.3)
+            task.wait(0.4)
             pcall(function()
                 for _, obj in pairs(workspace:GetChildren()) do
                     if not Config.AutoChest then break end
@@ -256,12 +280,12 @@ CreateToggle("Авто-сбор сундуков", false, function(state)
     end)
 end)
 
--- 5. Авто-прокачка статов (Melee)
-CreateToggle("Авто-прокачка статов (Ближний бой)", false, function(state)
+-- Авто-прокачка статов
+CreateToggle("Авто-прокачка статов (Melee)", false, function(state)
     Config.AutoStats = state
     task.spawn(function()
         while Config.AutoStats do
-            task.wait(1)
+            task.wait(2)
             pcall(function()
                 if Remotes then
                     Remotes.CommF_:InvokeServer("AddPoint", "Melee", 3)
@@ -271,7 +295,7 @@ CreateToggle("Авто-прокачка статов (Ближний бой)", f
     end)
 end)
 
--- 6. Анти-застревание (Noclip)
+-- Noclip (Анти-застревание)
 CreateToggle("Анти-застревание (Noclip)", false, function(state)
     Config.Noclip = state
 end)
@@ -284,9 +308,9 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Системное уведомление
+-- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "⚡ Blox Fruits Hub",
-    Text = "Все функции успешно загружены!",
+    Title = "⚡ Perfect Hub",
+    Text = "Скрипт успешно запущен и готов к работе!",
     Duration = 4
 })
