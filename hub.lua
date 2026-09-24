@@ -8,12 +8,23 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:FindFirstChild("Remete")
+-- Универсальный поиск Remotes в игре
+local Remotes = ReplicatedStorage:FindFirstChild("Remotes") 
+    or ReplicatedStorage:FindFirstChild("Remete") 
+    or ReplicatedStorage:FindFirstChild("Remote")
 
--- Главный контейнер
+if not Remotes then
+    for _, v in pairs(ReplicatedStorage:GetChildren()) do
+        if v:IsA("Folder") and (v:FindFirstChild("CommF_") or v:FindFirstChild("Buso")) then
+            Remotes = v
+            break
+        end
+    end
+end
+
+-- Главный контейнер GUI
 local SG = Instance.new("ScreenGui")
 SG.Name = "QuantumGodHub"
 SG.ZIndexBehavior = Enum.ZIndexBehavior.Global
@@ -28,7 +39,7 @@ end)
 if not SG.Parent then SG.Parent = PlayerGui end
 _G.QuantumGodHub = SG
 
--- ==================== ОСНОВНОЙ ХУД ====================
+-- ==================== ОСНОВНОЙ ИНТЕРФЕЙС ====================
 local W, H = 520, 380
 local Card = Instance.new("Frame")
 Card.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -44,7 +55,6 @@ CardStroke.Color = Color3.fromRGB(120, 60, 220)
 CardStroke.Thickness = 1.5
 CardStroke.Parent = Card
 
--- Шапка (перетаскивание)
 local Header = Instance.new("Frame")
 Header.BackgroundColor3 = Color3.fromRGB(22, 16, 36)
 Header.Size = UDim2.new(1, 0, 0, 40)
@@ -57,13 +67,14 @@ TitleLbl.BackgroundTransparency = 1
 TitleLbl.Position = UDim2.new(0, 15, 0, 0)
 TitleLbl.Size = UDim2.new(1, -100, 1, 0)
 TitleLbl.Font = Enum.Font.GothamBold
-TitleLbl.Text = "⚡ Blox Fruits Perfect Quest & Farm"
+TitleLbl.Text = "⚡ Blox Fruits Fix Hub (F9 для логов)"
 TitleLbl.TextColor3 = Color3.fromRGB(220, 200, 255)
-TitleLbl.TextSize = 14
+TitleLbl.TextSize = 13
 TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
 TitleLbl.ZIndex = 6
 TitleLbl.Parent = Header
 
+-- Перетаскивание окна
 local dragging, dragInput, dragStart, startPos
 Header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -102,17 +113,6 @@ local UIList = Instance.new("UIListLayout")
 UIList.Padding = UDim.new(0, 8)
 UIList.Parent = ContentFrame
 
-local ToggleMenuBtn = Instance.new("TextButton")
-ToggleMenuBtn.BackgroundTransparency = 1
-ToggleMenuBtn.Position = UDim2.new(1, -70, 0, 5)
-ToggleMenuBtn.Size = UDim2.new(0, 30, 0, 30)
-ToggleMenuBtn.Font = Enum.Font.GothamBold
-ToggleMenuBtn.Text = "_"
-ToggleMenuBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-ToggleMenuBtn.TextSize = 16
-ToggleMenuBtn.ZIndex = 6
-ToggleMenuBtn.Parent = Header
-
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.BackgroundTransparency = 1
 CloseBtn.Position = UDim2.new(1, -35, 0, 5)
@@ -124,14 +124,6 @@ CloseBtn.TextSize = 16
 CloseBtn.ZIndex = 6
 CloseBtn.Parent = Header
 
-local menuVisible = true
-ToggleMenuBtn.MouseButton1Click:Connect(function()
-    menuVisible = not menuVisible
-    ContentFrame.Visible = menuVisible
-    Card.Size = menuVisible and UDim2.new(0, W, 0, H) or UDim2.new(0, W, 0, 40)
-    ToggleMenuBtn.Text = menuVisible and "_" or "+"
-end)
-
 CloseBtn.MouseButton1Click:Connect(function()
     SG:Destroy()
     _G.QuantumGodHub = nil
@@ -140,8 +132,6 @@ end)
 local Config = {
     AutoFarm = false,
     Noclip = false,
-    AutoChest = false,
-    AutoFruit = false,
     AutoBuso = false,
 }
 
@@ -172,7 +162,7 @@ local function CreateToggle(titleText, defaultState, callback)
     end)
 end
 
--- ==================== СИСТЕМА КВЕСТОВ ПЕРВОГО МОРЯ ====================
+-- ==================== СИСТЕМА КВЕСТОВ (ПЕРВОЕ МОРЕ) ====================
 local function GetQuestDetails()
     local success, lv = pcall(function() return LocalPlayer.Data.Level.Value end)
     if not success or not lv then return "BanditQuest1", 1, "Bandit" end
@@ -200,40 +190,33 @@ local function HasQuest()
     return success and val or false
 end
 
--- ==================== АВТОФАРМ С СТРОГОЙ ПРОВЕРКОЙ КВЕСТА ====================
-CreateToggle("Умный Авто-фарм (Сначала Квест -> Моб Сверху + Скилл 1)", false, function(state)
+-- ==================== НАДЕЖНЫЙ АВТОФАРМ ====================
+CreateToggle("Ультимативный Авто-Фарм", false, function(state)
     Config.AutoFarm = state
     task.spawn(function()
-        local lastTarget = nil
-        local hasUsedSkill = false
-
         while Config.AutoFarm do
-            task.wait(0.15)
+            task.wait(0.1)
             pcall(function()
                 local char = LocalPlayer.Character
                 if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") then return end
                 local hrp = char.HumanoidRootPart
                 local humanoid = char.Humanoid
 
-                if humanoid.Health <= 0 then
-                    hasUsedSkill = false
-                    lastTarget = nil
-                    return
-                end
+                if humanoid.Health <= 0 then return end
 
-                -- 1. Сначала проверяем квест. Если его нет — берем и ЖДЕМ секунду перед атакой
+                -- 1. Проверяем квест
                 if not HasQuest() then
                     local qName, qId, _ = GetQuestDetails()
                     if qName and Remotes and Remotes:FindFirstChild("CommF_") then
                         pcall(function()
                             Remotes.CommF_:InvokeServer("RequestQuest", qName, qId)
                         end)
-                        task.wait(1.2) -- Даем игре время выдать квест на экран
+                        task.wait(1.5)
                         return
                     end
                 end
 
-                -- 2. Ищем строго того моба, который указан в квесте
+                -- 2. Ищем строго нужного квестового моба
                 local enemies = workspace:FindFirstChild("Enemies")
                 local target = nil
                 local _, _, targetName = GetQuestDetails()
@@ -251,22 +234,15 @@ CreateToggle("Умный Авто-фарм (Сначала Квест -> Моб 
                     end
                 end
 
-                -- 3. Если квестовый моб найден — зависаем над ним сверху и бьем
+                -- 3. Если моб найден — телепортируемся над ним и бьем
                 if target and target:FindFirstChild("HumanoidRootPart") then
                     local tHrp = target.HumanoidRootPart
                     
-                    -- Жёсткий ноклип и зависание сверху
                     humanoid.PlatformStand = true
-                    hrp.CFrame = tHrp.CFrame + Vector3.new(0, 16, 0)
+                    hrp.CFrame = tHrp.CFrame + Vector3.new(0, 15, 0)
                     hrp.Velocity = Vector3.new(0, 0, 0)
-                    hrp.RotVelocity = Vector3.new(0, 0, 0)
 
-                    if lastTarget ~= target then
-                        lastTarget = target
-                        hasUsedSkill = false
-                    end
-
-                    -- Берем оружие в руки
+                    -- Берем инструмент в руки (если не взят)
                     local tool = char:FindFirstChildOfClass("Tool")
                     if not tool then
                         local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
@@ -281,29 +257,14 @@ CreateToggle("Умный Авто-фарм (Сначала Квест -> Моб 
                         end
                     end
 
-                    -- Прожимаем скилл 1 один раз для новой цели
-                    if tool and not hasUsedSkill then
-                        hasUsedSkill = true
-                        pcall(function()
-                            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.One, false, game)
-                            task.wait(0.05)
-                            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, false, game)
-                        end)
-                        task.wait(0.2)
-                    end
-
-                    -- Нанесение урона (активация инструмента + клики)
+                    -- Прямая активация оружия для нанесения урона
                     if tool then
                         pcall(function()
                             tool:Activate()
-                            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-                            task.wait(0.03)
-                            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
                         end)
                     end
                 else
                     humanoid.PlatformStand = false
-                    lastTarget = nil
                 end
             end)
         end
@@ -316,7 +277,7 @@ CreateToggle("Умный Авто-фарм (Сначала Квест -> Моб 
     end)
 end)
 
--- Глобальный Noclip
+-- Noclip для прохода сквозь стены
 CreateToggle("Анти-застревание (Noclip)", false, function(state)
     Config.Noclip = state
 end)
@@ -335,14 +296,14 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Дополнительные функции
+-- Авто-Хаки
 CreateToggle("Авто-Хаки (Buso Haki)", false, function(state)
     Config.AutoBuso = state
     task.spawn(function()
         while Config.AutoBuso do
-            task.wait(1.5)
+            task.wait(2)
             pcall(function()
-                if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Buso") and Remotes then
+                if LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Buso") and Remotes and Remotes:FindFirstChild("CommF_") then
                     Remotes.CommF_:InvokeServer("Buso")
                 end
             end)
@@ -350,43 +311,8 @@ CreateToggle("Авто-Хаки (Buso Haki)", false, function(state)
     end)
 end)
 
-CreateToggle("Авто-сбор фруктов", false, function(state)
-    Config.AutoFruit = state
-    task.spawn(function()
-        while Config.AutoFruit do
-            task.wait(0.5)
-            pcall(function()
-                for _, item in pairs(workspace:GetChildren()) do
-                    if not Config.AutoFruit then break end
-                    if item:IsA("Tool") and item:FindFirstChild("Handle") then
-                        LocalPlayer.Character.HumanoidRootPart.CFrame = item.Handle.CFrame
-                    end
-                end
-            end)
-        end
-    end)
-end)
-
-CreateToggle("Авто-сбор сундуков", false, function(state)
-    Config.AutoChest = state
-    task.spawn(function()
-        while Config.AutoChest do
-            task.wait(0.4)
-            pcall(function()
-                for _, obj in pairs(workspace:GetChildren()) do
-                    if not Config.AutoChest then break end
-                    if string.find(obj.Name, "Chest") and obj:IsA("Part") then
-                        LocalPlayer.Character.HumanoidRootPart.CFrame = obj.CFrame
-                    end
-                end
-            end)
-        end
-    end)
-end)
-
--- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "⚡ God Mode Hub",
-    Text = "Исправлено: Сначала квест, затем точный урон по мобам!",
+    Text = "Скрипт перезапущен с расширенным поиском Remotes!",
     Duration = 4
 })
