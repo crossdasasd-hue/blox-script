@@ -12,7 +12,6 @@ local UserInputService = game:GetService("UserInputService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Безопасный поиск Remotes
 local Remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:FindFirstChild("Remete")
 
 -- Главный контейнер
@@ -59,7 +58,7 @@ TitleLbl.BackgroundTransparency = 1
 TitleLbl.Position = UDim2.new(0, 15, 0, 0)
 TitleLbl.Size = UDim2.new(1, -100, 1, 0)
 TitleLbl.Font = Enum.Font.GothamBold
-TitleLbl.Text = "⚡ Blox Fruits Fixed Hub (Draggable)"
+TitleLbl.Text = "⚡ Blox Fruits Ultimate God Hub"
 TitleLbl.TextColor3 = Color3.fromRGB(220, 200, 255)
 TitleLbl.TextSize = 14
 TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -213,15 +212,15 @@ local function HasQuest()
     return success and val or false
 end
 
--- ==================== ИСПРАВЛЕННЫЙ АВТОФАРМ ====================
-CreateToggle("Умный Авто-фарм (Noclip Сверху + Скилл 1)", false, function(state)
+-- ==================== ИДЕАЛЬНЫЙ АВТОФАРМ (ВИСИТ СВЕРХУ + АТАКА) ====================
+CreateToggle("Идеальный Авто-фарм (Noclip Сверху + Атака)", false, function(state)
     Config.AutoFarm = state
     task.spawn(function()
         local lastTarget = nil
         local hasUsedSkill = false
 
         while Config.AutoFarm do
-            task.wait(0.2)
+            task.wait(0.1)
             pcall(function()
                 local char = LocalPlayer.Character
                 if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") then return end
@@ -234,18 +233,18 @@ CreateToggle("Умный Авто-фарм (Noclip Сверху + Скилл 1)"
                     return
                 end
 
-                -- 1. Авто-взятие квеста через CommF_
+                -- 1. Берем квест
                 if not HasQuest() then
                     local qName, qId, _ = GetQuestDetails()
                     if qName and Remotes and Remotes:FindFirstChild("CommF_") then
                         pcall(function()
                             Remotes.CommF_:InvokeServer("RequestQuest", qName, qId)
                         end)
-                        task.wait(0.8)
+                        task.wait(0.6)
                     end
                 end
 
-                -- 2. Поиск моба
+                -- 2. Ищем моба
                 local enemies = workspace:FindFirstChild("Enemies")
                 local target = nil
                 local _, _, targetName = GetQuestDetails()
@@ -255,7 +254,7 @@ CreateToggle("Умный Авто-фарм (Noclip Сверху + Скилл 1)"
                         local eHum = enemy:FindFirstChild("Humanoid")
                         local eHrp = enemy:FindFirstChild("HumanoidRootPart")
                         if eHum and eHrp and eHum.Health > 0 then
-                            if not targetName or string.find(enemy.Name, targetName) or string.find(enemy.Name, "Bandit") then
+                            if not targetName or string.find(enemy.Name, targetName) then
                                 target = enemy
                                 break
                             end
@@ -263,7 +262,7 @@ CreateToggle("Умный Авто-фарм (Noclip Сверху + Скилл 1)"
                     end
                 end
 
-                -- Если конкретный по квесту не найден, цепляем любого живого врага поблизости
+                -- Если по квесту не нашли, цепляем любого живого моба
                 if not target and enemies then
                     for _, enemy in pairs(enemies:GetChildren()) do
                         local eHum = enemy:FindFirstChild("Humanoid")
@@ -275,21 +274,21 @@ CreateToggle("Умный Авто-фарм (Noclip Сверху + Скилл 1)"
                     end
                 end
 
-                -- 3. Фармим найденного моба
+                -- 3. Зависаем строго СВЕРХУ над мобом (Noclip Полёт) и атакуем
                 if target and target:FindFirstChild("HumanoidRootPart") then
                     local tHrp = target.HumanoidRootPart
                     
-                    -- Зависаем строго сверху на ноуклипе
-                    humanoid.PlatformStand = true
-                    hrp.CFrame = tHrp.CFrame * CFrame.new(0, 15, 0)
+                    -- Жёстко фиксируем позицию на 16 блоков вверх, отключая гравитацию и падение
+                    hrp.CFrame = tHrp.CFrame + Vector3.new(0, 16, 0)
                     hrp.Velocity = Vector3.new(0, 0, 0)
+                    hrp.RotVelocity = Vector3.new(0, 0, 0)
 
                     if lastTarget ~= target then
                         lastTarget = target
                         hasUsedSkill = false
                     end
 
-                    -- Достаем оружие
+                    -- Достаем оружие в руки
                     local tool = char:FindFirstChildOfClass("Tool")
                     if not tool then
                         local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
@@ -304,7 +303,7 @@ CreateToggle("Умный Авто-фарм (Noclip Сверху + Скилл 1)"
                         end
                     end
 
-                    -- Прожимаем скилл 1 один раз
+                    -- Прожимаем скилл "1" один раз для новой цели
                     if tool and not hasUsedSkill then
                         hasUsedSkill = true
                         pcall(function()
@@ -312,37 +311,37 @@ CreateToggle("Умный Авто-фарм (Noclip Сверху + Скилл 1)"
                             task.wait(0.05)
                             VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, false, game)
                         end)
-                        task.wait(0.2)
+                        task.wait(0.15)
                     end
 
-                    -- Обычная атака
+                    -- Авто-атака моба (инструмент + клик мыши)
                     if tool then
                         pcall(function()
                             tool:Activate()
+                            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+                            task.wait(0.02)
+                            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
                         end)
                     end
                 else
-                    humanoid.PlatformStand = false
                     lastTarget = nil
                 end
             end)
         end
-        
-        pcall(function()
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                LocalPlayer.Character.Humanoid.PlatformStand = false
-            end
-        end)
     end)
 end)
 
--- Глобальный Noclip (от стен и столкновений)
+-- Глобальный Noclip (от стен и мобов)
 CreateToggle("Анти-застревание (Noclip)", false, function(state)
     Config.Noclip = state
 end)
 
 RunService.Stepped:Connect(function()
     if (Config.Noclip or Config.AutoFarm) and LocalPlayer.Character then
+        local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 0, hrp.AssemblyLinearVelocity.Z)
+        end
         for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
             if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then 
                 part.CanCollide = false 
@@ -403,6 +402,6 @@ end)
 -- Уведомление
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "⚡ God Mode Hub",
-    Text = "Скрипт полностью исправлен и запущен!",
+    Text = "Полет сверху и авто-атака полностью настроены!",
     Duration = 4
 })
