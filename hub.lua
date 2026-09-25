@@ -9,8 +9,15 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualUser = game:GetService("VirtualUser")
 
--- Универсальный поиск Remotes в игре
+-- Защита от AFK кика
+LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
+
+-- Универсальный поиск Remotes
 local Remotes = ReplicatedStorage:FindFirstChild("Remotes") 
     or ReplicatedStorage:FindFirstChild("Remete") 
     or ReplicatedStorage:FindFirstChild("Remote")
@@ -39,8 +46,8 @@ end)
 if not SG.Parent then SG.Parent = PlayerGui end
 _G.QuantumGodHub = SG
 
--- ==================== ОСНОВНОЙ ИНТЕРФЕЙС ====================
-local W, H = 520, 380
+-- ==================== ИНТЕРФЕЙС ====================
+local W, H = 520, 390
 local Card = Instance.new("Frame")
 Card.AnchorPoint = Vector2.new(0.5, 0.5)
 Card.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -67,14 +74,14 @@ TitleLbl.BackgroundTransparency = 1
 TitleLbl.Position = UDim2.new(0, 15, 0, 0)
 TitleLbl.Size = UDim2.new(1, -100, 1, 0)
 TitleLbl.Font = Enum.Font.GothamBold
-TitleLbl.Text = "⚡ Blox Fruits Fix Hub (F9 для логов)"
+TitleLbl.Text = "⚡ Blox Fruits Ultimate Hub + Anti-AFK"
 TitleLbl.TextColor3 = Color3.fromRGB(220, 200, 255)
 TitleLbl.TextSize = 13
 TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
 TitleLbl.ZIndex = 6
 TitleLbl.Parent = Header
 
--- Перетаскивание окна
+-- Перетаскивание окна (исправлено)
 local dragging, dragInput, dragStart, startPos
 Header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -87,14 +94,8 @@ Header.InputBegan:Connect(function(input)
     end
 end)
 
-Header.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
 UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - dragStart
         Card.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
@@ -104,7 +105,7 @@ local ContentFrame = Instance.new("ScrollingFrame")
 ContentFrame.BackgroundTransparency = 1
 ContentFrame.Position = UDim2.new(0, 15, 0, 50)
 ContentFrame.Size = UDim2.new(1, -30, 1, -60)
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 550)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 650)
 ContentFrame.ScrollBarThickness = 4
 ContentFrame.ZIndex = 2
 ContentFrame.Parent = Card
@@ -162,21 +163,78 @@ local function CreateToggle(titleText, defaultState, callback)
     end)
 end
 
--- ==================== СИСТЕМА КВЕСТОВ (ПЕРВОЕ МОРЕ) ====================
+-- ==================== ПОЛНАЯ БАЗА КВЕСТОВ (1, 2, 3 МОРЯ) ====================
 local function GetQuestDetails()
     local success, lv = pcall(function() return LocalPlayer.Data.Level.Value end)
     if not success or not lv then return "BanditQuest1", 1, "Bandit" end
 
-    if lv >= 1 and lv <= 9 then return "BanditQuest1", 1, "Bandit"
-    elseif lv >= 10 and lv <= 14 then return "JungleQuest", 1, "Monkey"
-    elseif lv >= 15 and lv <= 29 then return "JungleQuest", 2, "Gorilla"
-    elseif lv >= 30 and lv <= 39 then return "BuggyQuest1", 1, "Pirate"
-    elseif lv >= 40 and lv <= 59 then return "BuggyQuest1", 2, "Brute"
-    elseif lv >= 60 and lv <= 74 then return "DesertQuest", 1, "Desert Bandit"
-    elseif lv >= 75 and lv <= 89 then return "DesertQuest", 2, "Desert Officer"
-    elseif lv >= 90 and lv <= 99 then return "SnowQuest", 1, "Snow Bandit"
-    elseif lv >= 100 and lv <= 119 then return "SnowQuest", 2, "Snowman"
-    else return "MarineQuest", 1, "Trainee" end
+    -- Море 1
+    if lv <= 9 then return "BanditQuest1", 1, "Bandit"
+    elseif lv <= 14 then return "JungleQuest", 1, "Monkey"
+    elseif lv <= 29 then return "JungleQuest", 2, "Gorilla"
+    elseif lv <= 39 then return "BuggyQuest1", 1, "Pirate"
+    elseif lv <= 59 then return "BuggyQuest1", 2, "Brute"
+    elseif lv <= 74 then return "DesertQuest", 1, "Desert Bandit"
+    elseif lv <= 89 then return "DesertQuest", 2, "Desert Officer"
+    elseif lv <= 99 then return "SnowQuest", 1, "Snow Bandit"
+    elseif lv <= 119 then return "SnowQuest", 2, "Snowman"
+    elseif lv <= 149 then return "MarineQuest", 1, "Chief Petty Officer"
+    elseif lv <= 174 then return "SkyQuest", 1, "Sky Bandit"
+    elseif lv <= 192 then return "SkyQuest", 2, "Dark Master"
+    elseif lv <= 219 then return "PrisonQuest", 1, "Prisoner"
+    elseif lv <= 249 then return "PrisonQuest", 2, "Dangerous Prisoner"
+    elseif lv <= 274 then return "ColosseumQuest", 1, "Toga Warrior"
+    elseif lv <= 299 then return "ColosseumQuest", 2, "Gladiator"
+    elseif lv <= 324 then return "MagmaQuest", 1, "Military Soldier"
+    elseif lv <= 374 then return "MagmaQuest", 2, "Military Spy"
+    elseif lv <= 399 then return "FishmanQuest", 1, "Fishman Warrior"
+    elseif lv <= 449 then return "FishmanQuest", 2, "Fishman Commando"
+    elseif lv <= 524 then return "ImpelQuest", 1, "God's Guard"
+    elseif lv <= 549 then return "ImpelQuest", 2, "Shanda"
+    elseif lv <= 624 then return "FountainQuest", 1, "Galley Pirate"
+    elseif lv <= 699 then return "FountainQuest", 2, "Galley Captain"
+
+    -- Море 2
+    elseif lv <= 724 then return "Area1Quest", 1, "Raider"
+    elseif lv <= 774 then return "Area1Quest", 2, "Mercenary"
+    elseif lv <= 799 then return "Area2Quest", 1, "Swan Pirate"
+    elseif lv <= 849 then return "Area2Quest", 2, "Factory Staff"
+    elseif lv <= 874 then return "MarineQuest2", 1, "Marine Lieutenant"
+    elseif lv <= 899 then return "MarineQuest2", 2, "Marine Captain"
+    elseif lv <= 949 then return "ZombieQuest", 1, "Zombie"
+    elseif lv <= 999 then return "ZombieQuest", 2, "Vampire"
+    elseif lv <= 1049 then return "SnowMountainQuest", 1, "Snow Trooper"
+    elseif lv <= 1099 then return "SnowMountainQuest", 2, "Winter Warrior"
+    elseif lv <= 1149 then return "IceSideQuest", 1, "Lab Subordinate"
+    elseif lv <= 1199 then return "IceSideQuest", 2, "Horned Miner"
+    elseif lv <= 1249 then return "FireSideQuest", 1, "Magma Ninja"
+    elseif lv <= 1299 then return "FireSideQuest", 2, "Lava Pirate"
+    elseif lv <= 1349 then return "ShipQuest1", 1, "Ship Deckhand"
+    elseif lv <= 1424 then return "ShipQuest1", 2, "Ship Engineer"
+    elseif lv <= 1499 then return "CursedQuest1", 1, "Saber Expert"
+
+    -- Море 3
+    elseif lv <= 1524 then return "PiratePortQuest", 1, "Pirate Millionaire"
+    elseif lv <= 1574 then return "PiratePortQuest", 2, "Pistol Billionaire"
+    elseif lv <= 1624 then return "AmazonQuest", 1, "Island Boy"
+    elseif lv <= 1674 then return "AmazonQuest", 2, "Sun Warrior"
+    elseif lv <= 1724 then return "MarineQuest3", 1, "Marine Commodore"
+    elseif lv <= 1774 then return "MarineQuest3", 2, "Marine Rear Admiral"
+    elseif lv <= 1824 then return "DeepForestQuest", 1, "Mythological Pirate"
+    elseif lv <= 1874 then return "DeepForestQuest", 2, "Musketeer Pirate"
+    elseif lv <= 1924 then return "HauntedQuest1", 1, "Reborn Skeleton"
+    elseif lv <= 1974 then return "HauntedQuest1", 2, "Living Zombie"
+    elseif lv <= 2024 then return "HauntedQuest2", 1, "Demonic Soul"
+    elseif lv <= 2074 then return "HauntedQuest2", 2, "Posessed Mummy"
+    elseif lv <= 2124 then return "NutIslandQuest", 1, "Peanut Scout"
+    elseif lv <= 2199 then return "NutIslandQuest", 2, "Peanut President"
+    elseif lv <= 2249 then return "IceCreamQuest", 1, "Ice Cream Chef"
+    elseif lv <= 2299 then return "IceCreamQuest", 2, "Ice Cream Commander"
+    elseif lv <= 2349 then return "CakeQuest1", 1, "Cookie Crafter"
+    elseif lv <= 2399 then return "CakeQuest1", 2, "Cake Guard"
+    elseif lv <= 2449 then return "CakeQuest2", 1, "Baking Staff"
+    elseif lv <= 2550 then return "CakeQuest2", 2, "Head Baker"
+    else return "CakeQuest2", 2, "Head Baker" end
 end
 
 local function HasQuest()
@@ -190,8 +248,8 @@ local function HasQuest()
     return success and val or false
 end
 
--- ==================== НАДЕЖНЫЙ АВТОФАРМ ====================
-CreateToggle("Ультимативный Авто-Фарм", false, function(state)
+-- ==================== АВТО-ФАРМ ====================
+CreateToggle("Авто-Фарм Уровней (Все 3 моря)", false, function(state)
     Config.AutoFarm = state
     task.spawn(function()
         while Config.AutoFarm do
@@ -216,7 +274,7 @@ CreateToggle("Ультимативный Авто-Фарм", false, function(sta
                     end
                 end
 
-                -- 2. Ищем строго нужного квестового моба
+                -- 2. Ищем моба
                 local enemies = workspace:FindFirstChild("Enemies")
                 local target = nil
                 local _, _, targetName = GetQuestDetails()
@@ -234,7 +292,7 @@ CreateToggle("Ультимативный Авто-Фарм", false, function(sta
                     end
                 end
 
-                -- 3. Если моб найден — телепортируемся над ним и бьем
+                -- 3. Телепортация и удар
                 if target and target:FindFirstChild("HumanoidRootPart") then
                     local tHrp = target.HumanoidRootPart
                     
@@ -242,7 +300,6 @@ CreateToggle("Ультимативный Авто-Фарм", false, function(sta
                     hrp.CFrame = tHrp.CFrame + Vector3.new(0, 15, 0)
                     hrp.Velocity = Vector3.new(0, 0, 0)
 
-                    -- Берем инструмент в руки (если не взят)
                     local tool = char:FindFirstChildOfClass("Tool")
                     if not tool then
                         local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
@@ -257,11 +314,8 @@ CreateToggle("Ультимативный Авто-Фарм", false, function(sta
                         end
                     end
 
-                    -- Прямая активация оружия для нанесения урона
                     if tool then
-                        pcall(function()
-                            tool:Activate()
-                        end)
+                        pcall(function() tool:Activate() end)
                     end
                 else
                     humanoid.PlatformStand = false
@@ -277,7 +331,7 @@ CreateToggle("Ультимативный Авто-Фарм", false, function(sta
     end)
 end)
 
--- Noclip для прохода сквозь стены
+-- Noclip
 CreateToggle("Анти-застревание (Noclip)", false, function(state)
     Config.Noclip = state
 end)
@@ -313,6 +367,6 @@ end)
 
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "⚡ God Mode Hub",
-    Text = "Скрипт перезапущен с расширенным поиском Remotes!",
+    Text = "Успешно загружено! Добавлен Анти-АФК и квесты всех морей.",
     Duration = 4
 })
