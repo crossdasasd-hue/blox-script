@@ -1,603 +1,515 @@
--- Часть 1: Ядро и Система Квестов
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local VirtualUser = game:GetService("VirtualUser")
+-- ==============================================================================
+-- PROJECT: QUANTUM GOD HUB (BLOFS FRUITS ULTIMATE AUTOFARM)
+-- ARCHITECTURE: Monolithic Modular Framework (Engineered for Extreme Stability)
+-- TARGET: Universal Executor Compatibility (Mobile / PC)
+-- ==============================================================================
 
--- Защита от AFK
-LocalPlayer.Idled:Connect(function()
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new())
-end)
-
--- Поиск Remotes
-local Remotes = ReplicatedStorage:FindFirstChild("Remotes") 
-    or ReplicatedStorage:FindFirstChild("Remete") 
-    or ReplicatedStorage:FindFirstChild("Remote")
-
--- База квестов всех 3 морей
-local function GetQuestDetails()
-    local success, lv = pcall(function() return LocalPlayer.Data.Level.Value end)
-    if not success or not lv then return "BanditQuest1", 1, "Bandit" end
-
-    -- Море 1
-    if lv <= 9 then return "BanditQuest1", 1, "Bandit"
-    elseif lv <= 14 then return "JungleQuest", 1, "Monkey"
-    elseif lv <= 29 then return "JungleQuest", 2, "Gorilla"
-    elseif lv <= 39 then return "BuggyQuest1", 1, "Pirate"
-    elseif lv <= 59 then return "BuggyQuest1", 2, "Brute"
-    elseif lv <= 74 then return "DesertQuest", 1, "Desert Bandit"
-    elseif lv <= 89 then return "DesertQuest", 2, "Desert Officer"
-    elseif lv <= 99 then return "SnowQuest", 1, "Snow Bandit"
-    elseif lv <= 119 then return "SnowQuest", 2, "Snowman"
-    elseif lv <= 149 then return "MarineQuest", 1, "Chief Petty Officer"
-    elseif lv <= 174 then return "SkyQuest", 1, "Sky Bandit"
-    elseif lv <= 192 then return "SkyQuest", 2, "Dark Master"
-    elseif lv <= 219 then return "PrisonQuest", 1, "Prisoner"
-    elseif lv <= 249 then return "PrisonQuest", 2, "Dangerous Prisoner"
-    elseif lv <= 274 then return "ColosseumQuest", 1, "Toga Warrior"
-    elseif lv <= 299 then return "ColosseumQuest", 2, "Gladiator"
-    elseif lv <= 324 then return "MagmaQuest", 1, "Military Soldier"
-    elseif lv <= 374 then return "MagmaQuest", 2, "Military Spy"
-    elseif lv <= 399 then return "FishmanQuest", 1, "Fishman Warrior"
-    elseif lv <= 449 then return "FishmanQuest", 2, "Fishman Commando"
-    elseif lv <= 524 then return "ImpelQuest", 1, "God's Guard"
-    elseif lv <= 549 then return "ImpelQuest", 2, "Shanda"
-    elseif lv <= 624 then return "FountainQuest", 1, "Galley Pirate"
-    elseif lv <= 699 then return "FountainQuest", 2, "Galley Captain"
-
-    -- Море 2
-    elseif lv <= 724 then return "Area1Quest", 1, "Raider"
-    elseif lv <= 774 then return "Area1Quest", 2, "Mercenary"
-    elseif lv <= 799 then return "Area2Quest", 1, "Swan Pirate"
-    elseif lv <= 849 then return "Area2Quest", 2, "Factory Staff"
-    elseif lv <= 874 then return "MarineQuest2", 1, "Marine Lieutenant"
-    elseif lv <= 899 then return "MarineQuest2", 2, "Marine Captain"
-    elseif lv <= 949 then return "ZombieQuest", 1, "Zombie"
-    elseif lv <= 999 then return "ZombieQuest", 2, "Vampire"
-    elseif lv <= 1049 then return "SnowMountainQuest", 1, "Snow Trooper"
-    elseif lv <= 1099 then return "SnowMountainQuest", 2, "Winter Warrior"
-    elseif lv <= 1149 then return "IceSideQuest", 1, "Lab Subordinate"
-    elseif lv <= 1199 then return "IceSideQuest", 2, "Horned Miner"
-    elseif lv <= 1249 then return "FireSideQuest", 1, "Magma Ninja"
-    elseif lv <= 1299 then return "FireSideQuest", 2, "Lava Pirate"
-    elseif lv <= 1349 then return "ShipQuest1", 1, "Ship Deckhand"
-    elseif lv <= 1424 then return "ShipQuest1", 2, "Ship Engineer"
-    elseif lv <= 1499 then return "CursedQuest1", 1, "Saber Expert"
-
-    -- Море 3
-    elseif lv <= 1524 then return "PiratePortQuest", 1, "Pirate Millionaire"
-    elseif lv <= 1574 then return "PiratePortQuest", 2, "Pistol Billionaire"
-    elseif lv <= 1624 then return "AmazonQuest", 1, "Island Boy"
-    elseif lv <= 1674 then return "AmazonQuest", 2, "Sun Warrior"
-    elseif lv <= 1724 then return "MarineQuest3", 1, "Marine Commodore"
-    elseif lv <= 1774 then return "MarineQuest3", 2, "Marine Rear Admiral"
-    elseif lv <= 1824 then return "DeepForestQuest", 1, "Mythological Pirate"
-    elseif lv <= 1874 then return "DeepForestQuest", 2, "Musketeer Pirate"
-    elseif lv <= 1924 then return "HauntedQuest1", 1, "Reborn Skeleton"
-    elseif lv <= 1974 then return "HauntedQuest1", 2, "Living Zombie"
-    elseif lv <= 2024 then return "HauntedQuest2", 1, "Demonic Soul"
-    elseif lv <= 2074 then return "HauntedQuest2", 2, "Posessed Mummy"
-    elseif lv <= 2124 then return "NutIslandQuest", 1, "Peanut Scout"
-    elseif lv <= 2199 then return "NutIslandQuest", 2, "Peanut President"
-    elseif lv <= 2249 then return "IceCreamQuest", 1, "Ice Cream Chef"
-    elseif lv <= 2299 then return "IceCreamQuest", 2, "Ice Cream Commander"
-    elseif lv <= 2349 then return "CakeQuest1", 1, "Cookie Crafter"
-    elseif lv <= 2399 then return "CakeQuest1", 2, "Cake Guard"
-    elseif lv <= 2449 then return "CakeQuest2", 1, "Baking Staff"
-    elseif lv <= 2550 then return "CakeQuest2", 2, "Head Baker"
-    else return "CakeQuest2", 2, "Head Baker" end
+-- [1] SYSTEM ENVIRONMENT & GLOBAL PROTECTIONS
+if _G.QuantumGodHubRunning then
+    pcall(function() _G.QuantumGodHubRunning:Destroy() end)
 end
 
-print("Часть 1 загружена успешно! Твой квест сейчас: " .. GetQuestDetails())
--- Часть 2: Система плавного полета (Tween)
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local Workspace = game:GetService("Workspace")
 
-getgenv().Tweening = false
-getgenv().CurrentTween = nil
-
-local function StopTween()
-    if getgenv().CurrentTween then
-        getgenv().CurrentTween:Cancel()
-        getgenv().CurrentTween = nil
-    end
-    getgenv().Tweening = false
-    
-    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        local bv = hrp:FindFirstChild("BodyVelocity")
-        local bg = hrp:FindFirstChild("BodyGyro")
-        if bv then bv:Destroy() end
-        if bg then bg:Destroy() end
-    end
-end
-
-local function FlyTo(targetPosition, speed)
-    local character = LocalPlayer.Character
-    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
-    
-    local hrp = character.HumanoidRootPart
-    local distance = (hrp.Position - targetPosition).Magnitude
-    
-    -- Стандартная скорость полета в топовых скриптах (около 300-350)
-    speed = speed or 320 
-    
-    if getgenv().Tweening then
-        StopTween()
-    end
-    
-    getgenv().Tweening = true
-    
-    -- Защита от падения во время полета
-    local bodyVel = hrp:FindFirstChild("BodyVelocity") or Instance.new("BodyVelocity")
-    bodyVel.Name = "BodyVelocity"
-    bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    bodyVel.Velocity = Vector3.new(0, 0, 0)
-    bodyVel.Parent = hrp
-
-    local tweenInfo = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
-    local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(targetPosition)})
-    
-    getgenv().CurrentTween = tween
-    tween:Play()
-    
-    local conn
-    conn = tween.Completed:Connect(function()
-        StopTween()
-        if conn then conn:Disconnect() end
-    end)
-end
-
--- Тестовая проверка: полет на 50 блоков вверх и обратно через 3 секунды
-task.spawn(function()
-    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        print("Тест полета: взлетаем...")
-        FlyTo(hrp.Position + Vector3.new(0, 50, 0), 150)
-    end
-end)
-
-print("Часть 2 загружена успешно! Система полета активирована.")
--- Часть 3: Fast Attack (Ускоренная атака и автоматический удар)
-local RS = game:GetService("RunService")
-local CombatFramework = require(LocalPlayer.PlayerScripts:WaitForChild("CombatFramework"))
-local CombatFrameworkR = getupvalues(CombatFramework)[2]
-local RigController = require(LocalPlayer.PlayerScripts:WaitForChild("CombatFramework").RigController)
-local RigControllerR = getupvalues(RigController)[2]
-local ActiveController = require(LocalPlayer.PlayerScripts:WaitForChild("CombatFramework").ActiveController)
-local ActiveControllerR = getupvalues(ActiveController)[2]
-
-getgenv().FastAttackEnabled = true
-
-local function GetCurrentBlade()
-    local char = LocalPlayer.Character
-    if not char then return nil end
-    local tool = char:FindFirstChildOfClass("Tool")
-    if tool and tool:FindFirstChild("Handle") then
-        return tool
-    end
-    return nil
-end
-
--- Основной цикл мгновенных ударов
-task.spawn(function()
-    while task.wait(0.01) do
-        pcall(function()
-            if getgenv().FastAttackEnabled then
-                local blade = GetCurrentBlade()
-                if blade then
-                    -- Эмуляция быстрых ударов через внутренние функции игры
-                    if CombatFrameworkR.activeController then
-                        CombatFrameworkR.activeController.timeToNextAttack = 0
-                        CombatFrameworkR.activeController.hitboxMagnitude = 60
-                        CombatFrameworkR.activeController:attack()
-                    end
-                end
-            end
-        end)
-    end
-end)
-
-print("Часть 3 загружена успешно! Fast Attack активирован.")
--- Часть 4: Автоматический фарм (Квесты + Телепортация к мобам)
-getgenv().AutoFarm = true
-
-local function GetClosestMob(mobName)
-    local target = nil
-    local shortestDistance = math.huge
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
-    local hrp = char.HumanoidRootPart
-
-    for _, v in pairs(workspace.Enemies:GetChildren()) do
-        if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v.Name == mobName then
-            local head = v:FindFirstChild("Head") or v:FindFirstChild("HumanoidRootPart")
-            if head then
-                local dist = (hrp.Position - head.Position).Magnitude
-                if dist < shortestDistance then
-                    shortestDistance = dist
-                    target = v
-                end
-            end
-        end
-    end
-    
-    -- Если в Enemies нет, ищем в папе с мобами на спавне
-    if not target then
-        for _, v in pairs(workspace:GetChildren()) do
-            if v.Name == mobName and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
-                local head = v:FindFirstChild("Head") or v:FindFirstChild("HumanoidRootPart")
-                if head then
-                    local dist = (hrp.Position - head.Position).Magnitude
-                    if dist < shortestDistance then
-                        shortestDistance = dist
-                        target = v
-                    end
-                end
-            end
-        end
-    end
-
-    return target
-end
-
--- Основной цикл автофарма
-task.spawn(function()
-    while task.wait(0.5) do
-        pcall(function()
-            if getgenv().AutoFarm then
-                local questName, questIndex, mobName = GetQuestDetails()
-                
-                -- Проверка: есть ли уже активный квест
-                local questGui = LocalPlayer.PlayerGui.Main.Quest
-                local isQuestActive = questGui.Visible
-                
-                if not isQuestActive then
-                    -- Если квест не взят — летим к NPC выдачи квеста и берем его
-                    -- (Встроенный обработчик диалогов CommF_)
-                    if Remotes then
-                        local args = {
-                            [1] = "StartQuest",
-                            [2] = questName,
-                            [3] = questIndex
-                        }
-                        Remotes.CommF_:InvokeServer(unpack(args))
-                    end
-                    task.wait(1)
-                else
-                    -- Квест есть — ищем моба и летим к нему
-                    local mob = GetClosestMob(mobName)
-                    if mob and mob:FindFirstChild("HumanoidRootPart") then
-                        local mobCFrame = mob.HumanoidRootPart.CFrame
-                        -- Телепортируемся/подлетаем чуть выше моба, чтобы не получать урон
-                        if type(FlyTo) == "function" then
-                            FlyTo(mobCFrame.Position + Vector3.new(0, 15, 0), 350)
-                        end
-                        
-                        -- Принудительно притягиваем мобов к себе для быстрого удара
-                        for _, e in pairs(workspace.Enemies:GetChildren()) do
-                            if e.Name == mobName and e:FindFirstChild("HumanoidRootPart") then
-                                e.HumanoidRootPart.CFrame = mobCFrame
-                                e.HumanoidRootPart.CanCollide = false
-                                local hum = e:FindFirstChildOfClass("Humanoid")
-                                if hum then
-                                    hum.WalkSpeed = 0
-                                    hum.JumpPower = 0
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-    end
-end)
-
-print("Часть 4 загружена успешно! Автофарм запущен.")
--- ==================== ФИНАЛЬНЫЙ СКРИПТ: BLOX FRUITS ULTIMATE HUB ====================
-if _G.QuantumGodHub then
-    pcall(function() _G.QuantumGodHub:Destroy() end)
-end
-
-local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
-local VirtualUser = game:GetService("VirtualUser")
 
--- 1. Защита от AFK кика
+-- Setup Main ScreenGui Container
+local MainScreenGui = Instance.new("ScreenGui")
+MainScreenGui.Name = "QuantumGodHubRoot"
+MainScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+MainScreenGui.ResetOnSpawn = false
+MainScreenGui.IgnoreGuiInset = true
+
+pcall(function()
+    if gethui then
+        MainScreenGui.Parent = gethui()
+    elseif syn and syn.protect_gui then
+        syn.protect_gui(MainScreenGui)
+        MainScreenGui.Parent = CoreGui
+    else
+        MainScreenGui.Parent = PlayerGui
+    end
+end)
+
+if not MainScreenGui.Parent then
+    MainScreenGui.Parent = PlayerGui
+end
+_G.QuantumGodHubRunning = MainScreenGui
+
+-- [2] CONFIGURATION DATA & STATE STORE
+local Settings = {
+    AutoFarmLevel = false,
+    FastAttack = false,
+    Noclip = false,
+    AutoHaki = false,
+    AutoChest = false,
+    AutoFruit = false,
+    SelectedWeapon = "Melee",
+    AttackDistance = 15,
+    TweenSpeed = 320,
+    VisualTheme = "DarkPurple"
+}
+
+-- [3] CORE UTILITY SERVICES & ANTI-AFK
+local VirtualUser = game:GetService("VirtualUser")
 LocalPlayer.Idled:Connect(function()
     VirtualUser:CaptureController()
     VirtualUser:ClickButton2(Vector2.new())
 end)
 
--- 2. Поиск Remotes
-local Remotes = ReplicatedStorage:FindFirstChild("Remotes") 
-    or ReplicatedStorage:FindFirstChild("Remete") 
-    or ReplicatedStorage:FindFirstChild("Remote")
+local function GetRemotes()
+    local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes") 
+        or ReplicatedStorage:FindFirstChild("Remete") 
+        or ReplicatedStorage:FindFirstChild("Remote")
+    if not remotesFolder then
+        for _, child in ipairs(ReplicatedStorage:GetChildren()) do
+            if child:IsA("Folder") and (child:FindFirstChild("CommF_") or child:FindFirstChild("Buso")) then
+                remotesFolder = child
+                break
+            end
+        end
+    end
+    return remotesFolder
+end
 
-if not Remotes then
-    for _, v in pairs(ReplicatedStorage:GetChildren()) do
-        if v:IsA("Folder") and (v:FindFirstChild("CommF_") or v:FindFirstChild("Buso")) then
-            Remotes = v
-            break
+local RemotesFolder = GetRemotes()
+
+-- [4] COMPREHENSIVE LEVEL & QUEST DATABASE (ALL 3 SEAS)
+local QuestDatabase = {
+    -- Sea 1
+    {Min = 1, Max = 9, QuestName = "BanditQuest1", Index = 1, MobName = "Bandit", NpcPos = CFrame.new(1059, 16, 1549)},
+    {Min = 10, Max = 14, QuestName = "JungleQuest", Index = 1, MobName = "Monkey", NpcPos = CFrame.new(-1598, 36, 153)},
+    {Min = 15, Max = 29, QuestName = "JungleQuest", Index = 2, MobName = "Gorilla", NpcPos = CFrame.new(-1598, 36, 153)},
+    {Min = 30, Max = 39, QuestName = "BuggyQuest1", Index = 1, MobName = "Pirate", NpcPos = CFrame.new(-1141, 4, 3828)},
+    {Min = 40, Max = 59, QuestName = "BuggyQuest1", Index = 2, MobName = "Brute", NpcPos = CFrame.new(-1141, 4, 3828)},
+    {Min = 60, Max = 74, QuestName = "DesertQuest", Index = 1, MobName = "Desert Bandit", NpcPos = CFrame.new(896, 6, 4390)},
+    {Min = 75, Max = 89, QuestName = "DesertQuest", Index = 2, MobName = "Desert Officer", NpcPos = CFrame.new(896, 6, 4390)},
+    {Min = 90, Max = 99, QuestName = "SnowQuest", Index = 1, MobName = "Snow Bandit", NpcPos = CFrame.new(1389, 87, -1298)},
+    {Min = 100, Max = 119, QuestName = "SnowQuest", Index = 2, MobName = "Snowman", NpcPos = CFrame.new(1389, 87, -1298)},
+    {Min = 120, Max = 149, QuestName = "MarineQuest", Index = 1, MobName = "Chief Petty Officer", NpcPos = CFrame.new(-5035, 20, 4325)},
+    {Min = 150, Max = 174, QuestName = "SkyQuest", Index = 1, MobName = "Sky Bandit", NpcPos = CFrame.new(-4842, 717, -2623)},
+    {Min = 175, Max = 192, QuestName = "SkyQuest", Index = 2, MobName = "Dark Master", NpcPos = CFrame.new(-4842, 717, -2623)},
+    {Min = 193, Max = 219, QuestName = "PrisonQuest", Index = 1, MobName = "Prisoner", NpcPos = CFrame.new(487, 4, 627)},
+    {Min = 220, Max = 249, QuestName = "PrisonQuest", Index = 2, MobName = "Dangerous Prisoner", NpcPos = CFrame.new(487, 4, 627)},
+    {Min = 250, Max = 274, QuestName = "ColosseumQuest", Index = 1, MobName = "Toga Warrior", NpcPos = CFrame.new(-1580, 7.5, -2983)},
+    {Min = 275, Max = 299, QuestName = "ColosseumQuest", Index = 2, MobName = "Gladiator", NpcPos = CFrame.new(-1580, 7.5, -2983)},
+    {Min = 300, Max = 324, QuestName = "MagmaQuest", Index = 1, MobName = "Military Soldier", NpcPos = CFrame.new(-5316, 12, 8515)},
+    {Min = 325, Max = 374, QuestName = "MagmaQuest", Index = 2, MobName = "Military Spy", NpcPos = CFrame.new(-5316, 12, 8515)},
+    {Min = 375, Max = 399, QuestName = "FishmanQuest", Index = 1, MobName = "Fishman Warrior", NpcPos = CFrame.new(6112, 18, 1567)},
+    {Min = 400, Max = 449, QuestName = "FishmanQuest", Index = 2, MobName = "Fishman Commando", NpcPos = CFrame.new(6112, 18, 1567)},
+    {Min = 450, Max = 524, QuestName = "ImpelQuest", Index = 1, MobName = "God's Guard", NpcPos = CFrame.new(-4721, 845, -1950)},
+    {Min = 525, Max = 549, QuestName = "ImpelQuest", Index = 2, MobName = "Shanda", NpcPos = CFrame.new(-7859, 5545, -381)},
+    {Min = 550, Max = 624, QuestName = "FountainQuest", Index = 1, MobName = "Galley Pirate", NpcPos = CFrame.new(5259, 38, 4050)},
+    {Min = 625, Max = 699, QuestName = "FountainQuest", Index = 2, MobName = "Galley Captain", NpcPos = CFrame.new(5259, 38, 4050)},
+
+    -- Sea 2
+    {Min = 700, Max = 724, QuestName = "Area1Quest", Index = 1, MobName = "Raider", NpcPos = CFrame.new(-424, 73, 1836)},
+    {Min = 725, Max = 774, QuestName = "Area1Quest", Index = 2, MobName = "Mercenary", NpcPos = CFrame.new(-424, 73, 1836)},
+    {Min = 775, Max = 799, QuestName = "Area2Quest", Index = 1, MobName = "Swan Pirate", NpcPos = CFrame.new(638, 73, 918)},
+    {Min = 800, Max = 849, QuestName = "Area2Quest", Index = 2, MobName = "Factory Staff", NpcPos = CFrame.new(638, 73, 918)},
+    {Min = 850, Max = 874, QuestName = "MarineQuest2", Index = 1, MobName = "Marine Lieutenant", NpcPos = CFrame.new(-2442, 73, -3215)},
+    {Min = 875, Max = 899, QuestName = "MarineQuest2", Index = 2, MobName = "Marine Captain", NpcPos = CFrame.new(-2442, 73, -3215)},
+    {Min = 900, Max = 949, QuestName = "ZombieQuest", Index = 1, MobName = "Zombie", NpcPos = CFrame.new(-5497, 49, -795)},
+    {Min = 950, Max = 999, QuestName = "ZombieQuest", Index = 2, MobName = "Vampire", NpcPos = CFrame.new(-5497, 49, -795)},
+    {Min = 1000, Max = 1049, QuestName = "SnowMountainQuest", Index = 1, MobName = "Snow Trooper", NpcPos = CFrame.new(609, 402, -5372)},
+    {Min = 1050, Max = 1099, QuestName = "SnowMountainQuest", Index = 2, MobName = "Winter Warrior", NpcPos = CFrame.new(609, 402, -5372)},
+    {Min = 1100, Max = 1149, QuestName = "IceSideQuest", Index = 1, MobName = "Lab Subordinate", NpcPos = CFrame.new(-6062, 15, -5095)},
+    {Min = 1150, Max = 1199, QuestName = "IceSideQuest", Index = 2, MobName = "Horned Miner", NpcPos = CFrame.new(-6062, 15, -5095)},
+    {Min = 1200, Max = 1249, QuestName = "FireSideQuest", Index = 1, MobName = "Magma Ninja", NpcPos = CFrame.new(-5428, 15, -8127)},
+    {Min = 1250, Max = 1299, QuestName = "FireSideQuest", Index = 2, MobName = "Lava Pirate", NpcPos = CFrame.new(-5428, 15, -8127)},
+    {Min = 1300, Max = 1349, QuestName = "ShipQuest1", Index = 1, MobName = "Ship Deckhand", NpcPos = CFrame.new(1038, 125, 32911)},
+    {Min = 1350, Max = 1424, QuestName = "ShipQuest1", Index = 2, MobName = "Ship Engineer", NpcPos = CFrame.new(1038, 125, 32911)},
+    {Min = 1425, Max = 1499, QuestName = "CursedQuest1", Index = 1, MobName = "Saber Expert", NpcPos = CFrame.new(-2228, 13, -3044)},
+
+    -- Sea 3
+    {Min = 1500, Max = 1524, QuestName = "PiratePortQuest", Index = 1, MobName = "Pirate Millionaire", NpcPos = CFrame.new(-290, 43, 5581)},
+    {Min = 1525, Max = 1574, QuestName = "PiratePortQuest", Index = 2, MobName = "Pistol Billionaire", NpcPos = CFrame.new(-290, 43, 5581)},
+    {Min = 1575, Max = 1624, QuestName = "AmazonQuest", Index = 1, MobName = "Island Boy", NpcPos = CFrame.new(5446, 600, 755)},
+    {Min = 1625, Max = 1674, QuestName = "AmazonQuest", Index = 2, MobName = "Sun Warrior", NpcPos = CFrame.new(5446, 600, 755)},
+    {Min = 1675, Max = 1724, QuestName = "MarineQuest3", Index = 1, MobName = "Marine Commodore", NpcPos = CFrame.new(2180, 28, -6741)},
+    {Min = 1725, Max = 1774, QuestName = "MarineQuest3", Index = 2, MobName = "Marine Rear Admiral", NpcPos = CFrame.new(2180, 28, -6741)},
+    {Min = 1775, Max = 1824, QuestName = "DeepForestQuest", Index = 1, MobName = "Mythological Pirate", NpcPos = CFrame.new(-13233, 332, -7648)},
+    {Min = 1825, Max = 1874, QuestName = "DeepForestQuest", Index = 2, MobName = "Musketeer Pirate", NpcPos = CFrame.new(-13233, 332, -7648)},
+    {Min = 1875, Max = 1924, QuestName = "HauntedQuest1", Index = 1, MobName = "Reborn Skeleton", NpcPos = CFrame.new(-9479, 142, 5565)},
+    {Min = 1925, Max = 1974, QuestName = "HauntedQuest1", Index = 2, MobName = "Living Zombie", NpcPos = CFrame.new(-9479, 142, 5565)},
+    {Min = 1975, Max = 2024, QuestName = "HauntedQuest2", Index = 1, MobName = "Demonic Soul", NpcPos = CFrame.new(-9516, 172, 6078)},
+    {Min = 2025, Max = 2074, QuestName = "HauntedQuest2", Index = 2, MobName = "Posessed Mummy", NpcPos = CFrame.new(-9516, 172, 6078)},
+    {Min = 2075, Max = 2124, QuestName = "NutIslandQuest", Index = 1, MobName = "Peanut Scout", NpcPos = CFrame.new(-2104, 38, -10194)},
+    {Min = 2125, Max = 2199, QuestName = "NutIslandQuest", Index = 2, MobName = "Peanut President", NpcPos = CFrame.new(-2104, 38, -10194)},
+    {Min = 2200, Max = 2249, QuestName = "IceCreamQuest", Index = 1, MobName = "Ice Cream Chef", NpcPos = CFrame.new(-803, 67, -10963)},
+    {Min = 2250, Max = 2299, QuestName = "IceCreamQuest", Index = 2, MobName = "Ice Cream Commander", NpcPos = CFrame.new(-803, 67, -10963)},
+    {Min = 2300, Max = 2349, QuestName = "CakeQuest1", Index = 1, MobName = "Cookie Crafter", NpcPos = CFrame.new(-2015, 38, -12050)},
+    {Min = 2350, Max = 2399, QuestName = "CakeQuest1", Index = 2, MobName = "Cake Guard", NpcPos = CFrame.new(-2015, 38, -12050)},
+    {Min = 2400, Max = 2449, QuestName = "CakeQuest2", Index = 1, MobName = "Baking Staff", NpcPos = CFrame.new(-1902, 38, -12842)},
+    {Min = 2450, Max = 9999, QuestName = "CakeQuest2", Index = 2, MobName = "Head Baker", NpcPos = CFrame.new(-1902, 38, -12842)}
+}
+
+local function GetCurrentQuestDetails()
+    local playerLevel = 1
+    pcall(function()
+        playerLevel = LocalPlayer.Data.Level.Value
+    end)
+
+    for _, quest in ipairs(QuestDatabase) do
+        if playerLevel >= quest.Min and playerLevel <= quest.Max then
+            return quest.QuestName, quest.Index, quest.MobName, quest.NpcPos
+        end
+    end
+    -- Fallback default
+    return "BanditQuest1", 1, "Bandit", CFrame.new(1059, 16, 1549)
+end
+
+local function HasActiveQuest()
+    local success, visible = pcall(function()
+        return LocalPlayer.PlayerGui.Main.Quest.Visible
+    end)
+    return success and visible or false
+end
+
+-- [5] MOVEMENT & TWEEN ENGINE (SAFE MATH VECTOR INTERPOLATION)
+local ActiveTween = nil
+
+local function CancelTween()
+    if ActiveTween then
+        ActiveTween:Cancel()
+        ActiveTween = nil
+    end
+    local character = LocalPlayer.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        local bodyVelocity = character.HumanoidRootPart:FindFirstChild("QuantumBodyVelocity")
+        if bodyVelocity then
+            bodyVelocity:Destroy()
         end
     end
 end
 
--- 3. База квестов (Все 3 моря)
-local function GetQuestDetails()
-    local success, lv = pcall(function() return LocalPlayer.Data.Level.Value end)
-    if not success or not lv then return "BanditQuest1", 1, "Bandit" end
-
-    -- Море 1
-    if lv <= 9 then return "BanditQuest1", 1, "Bandit"
-    elseif lv <= 14 then return "JungleQuest", 1, "Monkey"
-    elseif lv <= 29 then return "JungleQuest", 2, "Gorilla"
-    elseif lv <= 39 then return "BuggyQuest1", 1, "Pirate"
-    elseif lv <= 59 then return "BuggyQuest1", 2, "Brute"
-    elseif lv <= 74 then return "DesertQuest", 1, "Desert Bandit"
-    elseif lv <= 89 then return "DesertQuest", 2, "Desert Officer"
-    elseif lv <= 99 then return "SnowQuest", 1, "Snow Bandit"
-    elseif lv <= 119 then return "SnowQuest", 2, "Snowman"
-    elseif lv <= 149 then return "MarineQuest", 1, "Chief Petty Officer"
-    elseif lv <= 174 then return "SkyQuest", 1, "Sky Bandit"
-    elseif lv <= 192 then return "SkyQuest", 2, "Dark Master"
-    elseif lv <= 219 then return "PrisonQuest", 1, "Prisoner"
-    elseif lv <= 249 then return "PrisonQuest", 2, "Dangerous Prisoner"
-    elseif lv <= 274 then return "ColosseumQuest", 1, "Toga Warrior"
-    elseif lv <= 299 then return "ColosseumQuest", 2, "Gladiator"
-    elseif lv <= 324 then return "MagmaQuest", 1, "Military Soldier"
-    elseif lv <= 374 then return "MagmaQuest", 2, "Military Spy"
-    elseif lv <= 399 then return "FishmanQuest", 1, "Fishman Warrior"
-    elseif lv <= 449 then return "FishmanQuest", 2, "Fishman Commando"
-    elseif lv <= 524 then return "ImpelQuest", 1, "God's Guard"
-    elseif lv <= 549 then return "ImpelQuest", 2, "Shanda"
-    elseif lv <= 624 then return "FountainQuest", 1, "Galley Pirate"
-    elseif lv <= 699 then return "FountainQuest", 2, "Galley Captain"
-
-    -- Море 2
-    elseif lv <= 724 then return "Area1Quest", 1, "Raider"
-    elseif lv <= 774 then return "Area1Quest", 2, "Mercenary"
-    elseif lv <= 799 then return "Area2Quest", 1, "Swan Pirate"
-    elseif lv <= 849 then return "Area2Quest", 2, "Factory Staff"
-    elseif lv <= 874 then return "MarineQuest2", 1, "Marine Lieutenant"
-    elseif lv <= 899 then return "MarineQuest2", 2, "Marine Captain"
-    elseif lv <= 949 then return "ZombieQuest", 1, "Zombie"
-    elseif lv <= 999 then return "ZombieQuest", 2, "Vampire"
-    elseif lv <= 1049 then return "SnowMountainQuest", 1, "Snow Trooper"
-    elseif lv <= 1099 then return "SnowMountainQuest", 2, "Winter Warrior"
-    elseif lv <= 1149 then return "IceSideQuest", 1, "Lab Subordinate"
-    elseif lv <= 1199 then return "IceSideQuest", 2, "Horned Miner"
-    elseif lv <= 1249 then return "FireSideQuest", 1, "Magma Ninja"
-    elseif lv <= 1299 then return "FireSideQuest", 2, "Lava Pirate"
-    elseif lv <= 1349 then return "ShipQuest1", 1, "Ship Deckhand"
-    elseif lv <= 1424 then return "ShipQuest1", 2, "Ship Engineer"
-    elseif lv <= 1499 then return "CursedQuest1", 1, "Saber Expert"
-
-    -- Море 3
-    elseif lv <= 1524 then return "PiratePortQuest", 1, "Pirate Millionaire"
-    elseif lv <= 1574 then return "PiratePortQuest", 2, "Pistol Billionaire"
-    elseif lv <= 1624 then return "AmazonQuest", 1, "Island Boy"
-    elseif lv <= 1674 then return "AmazonQuest", 2, "Sun Warrior"
-    elseif lv <= 1724 then return "MarineQuest3", 1, "Marine Commodore"
-    elseif lv <= 1774 then return "MarineQuest3", 2, "Marine Rear Admiral"
-    elseif lv <= 1824 then return "DeepForestQuest", 1, "Mythological Pirate"
-    elseif lv <= 1874 then return "DeepForestQuest", 2, "Musketeer Pirate"
-    elseif lv <= 1924 then return "HauntedQuest1", 1, "Reborn Skeleton"
-    elseif lv <= 1974 then return "HauntedQuest1", 2, "Living Zombie"
-    elseif lv <= 2024 then return "HauntedQuest2", 1, "Demonic Soul"
-    elseif lv <= 2074 then return "HauntedQuest2", 2, "Posessed Mummy"
-    elseif lv <= 2124 then return "NutIslandQuest", 1, "Peanut Scout"
-    elseif lv <= 2199 then return "NutIslandQuest", 2, "Peanut President"
-    elseif lv <= 2249 then return "IceCreamQuest", 1, "Ice Cream Chef"
-    elseif lv <= 2299 then return "IceCreamQuest", 2, "Ice Cream Commander"
-    elseif lv <= 2349 then return "CakeQuest1", 1, "Cookie Crafter"
-    elseif lv <= 2399 then return "CakeQuest1", 2, "Cake Guard"
-    elseif lv <= 2449 then return "CakeQuest2", 1, "Baking Staff"
-    elseif lv <= 2550 then return "CakeQuest2", 2, "Head Baker"
-    else return "CakeQuest2", 2, "Head Baker" end
-end
-
--- 4. Система безопасного полета (Tween)
-getgenv().Tweening = false
-getgenv().CurrentTween = nil
-
-local function StopTween()
-    if getgenv().CurrentTween then
-        getgenv().CurrentTween:Cancel()
-        getgenv().CurrentTween = nil
-    end
-    getgenv().Tweening = false
-    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        local bv = hrp:FindFirstChild("BodyVelocity")
-        if bv then bv:Destroy() end
-    end
-end
-
-local function FlyTo(targetPosition, speed)
+local function TweenTo(targetCFrame)
     local character = LocalPlayer.Character
-    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
-    local hrp = character.HumanoidRootPart
-    local distance = (hrp.Position - targetPosition).Magnitude
-    speed = speed or 320 
+    if not character or not character:FindFirstChild("HumanoidRootPart") or not character:FindFirstChild("Humanoid") then return end
     
-    if getgenv().Tweening then StopTween() end
-    getgenv().Tweening = true
+    local humanoidRootPart = character.HumanoidRootPart
+    local distance = (humanoidRootPart.Position - targetCFrame.Position).Magnitude
     
-    local bodyVel = hrp:FindFirstChild("BodyVelocity") or Instance.new("BodyVelocity")
-    bodyVel.Name = "BodyVelocity"
-    bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    bodyVel.Velocity = Vector3.new(0, 0, 0)
-    bodyVel.Parent = hrp
+    if ActiveTween then
+        CancelTween()
+    end
 
-    local tweenInfo = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
-    local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(targetPosition)})
-    getgenv().CurrentTween = tween
-    tween:Play()
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.Name = "QuantumBodyVelocity"
+    bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    bodyVelocity.Parent = humanoidRootPart
+
+    local duration = distance / Settings.TweenSpeed
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
     
-    local conn
-    conn = tween.Completed:Connect(function()
-        StopTween()
-        if conn then conn:Disconnect() end
+    ActiveTween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+    ActiveTween:Play()
+    
+    ActiveTween.Completed:Connect(function()
+        CancelTween()
     end)
 end
 
--- 5. Интерфейс (GUI)
-local SG = Instance.new("ScreenGui")
-SG.Name = "QuantumGodHub"
-SG.ZIndexBehavior = Enum.ZIndexBehavior.Global
-SG.ResetOnSpawn = false
-SG.IgnoreGuiInset = true
-pcall(function() SG.Parent = game:GetService("CoreGui") end)
-if not SG.Parent then SG.Parent = PlayerGui end
-_G.QuantumGodHub = SG
+-- [6] FAST ATTACK COMBAT FRAMEWORK MODULE
+local CombatFramework = nil
+local CombatFrameworkR = nil
+pcall(function()
+    CombatFramework = require(LocalPlayer.PlayerScripts:WaitForChild("CombatFramework"))
+    CombatFrameworkR = getupvalues(CombatFramework)[2]
+end)
 
-local W, H = 500, 360
-local Card = Instance.new("Frame")
-Card.AnchorPoint = Vector2.new(0.5, 0.5)
-Card.Position = UDim2.new(0.5, 0, 0.5, 0)
-Card.Size = UDim2.new(0, W, 0, H)
-Card.BackgroundColor3 = Color3.fromRGB(18, 14, 28)
-Card.ClipsDescendants = true
-Card.Parent = SG
-Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 10)
+local function GetEquippedTool()
+    local character = LocalPlayer.Character
+    if not character then return nil end
+    for _, item in ipairs(character:GetChildren()) do
+        if item:IsA("Tool") then
+            if Settings.SelectedWeapon == "Melee" and item.ToolTip == "Melee" then
+                return item
+            elseif Settings.SelectedWeapon == "Sword" and item.ToolTip == "Sword" then
+                return item
+            elseif Settings.SelectedWeapon == "Blox Fruit" and item.ToolTip == "Blox Fruit" then
+                return item
+            elseif Settings.SelectedWeapon == "Gun" and item.ToolTip == "Gun" then
+                return item
+            end
+        end
+    end
+    -- Fallback to any tool
+    return character:FindFirstChildOfClass("Tool")
+end
 
+-- [7] GRAPHICAL USER INTERFACE (MODULAR DRAGGABLE WINDOW)
+local WindowWidth, WindowHeight = 540, 390
+local MainCard = Instance.new("Frame")
+MainCard.Name = "MainCard"
+MainCard.AnchorPoint = Vector2.new(0.5, 0.5)
+MainCard.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainCard.Size = UDim2.new(0, WindowWidth, 0, WindowHeight)
+MainCard.BackgroundColor3 = Color3.fromRGB(12, 10, 20)
+MainCard.ClipsDescendants = true
+MainCard.Parent = MainScreenGui
+
+Instance.new("UICorner", MainCard).CornerRadius = UDim.new(0, 12)
+local CardBorder = Instance.new("UIStroke")
+CardBorder.Color = Color3.fromRGB(110, 40, 210)
+CardBorder.Thickness = 1.8
+CardBorder.Parent = MainCard
+
+-- Window Header
 local Header = Instance.new("Frame")
-Header.BackgroundColor3 = Color3.fromRGB(26, 20, 40)
-Header.Size = UDim2.new(1, 0, 0, 38)
-Header.Parent = Card
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
+Header.Name = "Header"
+Header.BackgroundColor3 = Color3.fromRGB(20, 15, 32)
+Header.Size = UDim2.new(1, 0, 0, 42)
+Header.Parent = MainCard
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
 
-local TitleLbl = Instance.new("TextLabel")
-TitleLbl.BackgroundTransparency = 1
-TitleLbl.Position = UDim2.new(0, 12, 0, 0)
-TitleLbl.Size = UDim2.new(1, -80, 1, 0)
-TitleLbl.Font = Enum.Font.GothamBold
-TitleLbl.Text = "⚡ Blox Fruits Pro Hub [Anti-AFK + All Seas]"
-TitleLbl.TextColor3 = Color3.fromRGB(210, 190, 255)
-TitleLbl.TextSize = 12
-TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
-TitleLbl.Parent = Header
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Position = UDim2.new(0, 15, 0, 0)
+TitleLabel.Size = UDim2.new(1, -100, 1, 0)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Text = "⚡ Quantum God Hub | Blox Fruits Enterprise Edition"
+TitleLabel.TextColor3 = Color3.fromRGB(220, 200, 255)
+TitleLabel.TextSize = 13
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = Header
 
--- Перетаскивание окна
-local dragging, dragStart, startPos
+-- Dragging Logic Implementation
+local Dragging, DragInput, DragStart, StartPos
 Header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = Card.Position
+        Dragging = true
+        DragStart = input.Position
+        StartPos = MainCard.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                Dragging = false
+            end
+        end)
     end
 end)
+
 UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        Card.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
+    if Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - DragStart
+        MainCard.Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + delta.X, StartPos.Y.Scale, StartPos.Y.Offset + delta.Y)
     end
 end)
 
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.BackgroundTransparency = 1
-CloseBtn.Position = UDim2.new(1, -35, 0, 4)
-CloseBtn.Size = UDim2.new(0, 30, 0, 30)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.fromRGB(220, 80, 80)
-CloseBtn.TextSize = 14
-CloseBtn.Parent = Header
-CloseBtn.MouseButton1Click:Connect(function()
-    SG:Destroy()
-    _G.QuantumGodHub = nil
+-- Close Button
+local CloseButton = Instance.new("TextButton")
+CloseButton.BackgroundTransparency = 1
+CloseButton.Position = UDim2.new(1, -38, 0, 6)
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.Text = "✕"
+CloseButton.TextColor3 = Color3.fromRGB(230, 80, 80)
+CloseButton.TextSize = 15
+CloseButton.Parent = Header
+
+CloseButton.MouseButton1Click:Connect(function()
+    MainScreenGui:Destroy()
+    _G.QuantumGodHubRunning = nil
 end)
 
-local Content = Instance.new("ScrollingFrame")
-Content.BackgroundTransparency = 1
-Content.Position = UDim2.new(0, 15, 0, 48)
-Content.Size = UDim2.new(1, -30, 1, -58)
-Content.CanvasSize = UDim2.new(0, 0, 0, 400)
-Content.ScrollBarThickness = 3
-Content.Parent = Card
+-- Tab Content Container
+local ScrollContainer = Instance.new("ScrollingFrame")
+ScrollContainer.BackgroundTransparency = 1
+ScrollContainer.Position = UDim2.new(0, 15, 0, 52)
+ScrollContainer.Size = UDim2.new(1, -30, 1, -64)
+ScrollContainer.CanvasSize = UDim2.new(0, 0, 0, 650)
+ScrollContainer.ScrollBarThickness = 4
+ScrollContainer.Parent = MainCard
 
-local UIList = Instance.new("UIListLayout")
-UIList.Padding = UDim.new(0, 8)
-UIList.Parent = Content
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 8)
+UIListLayout.Parent = ScrollContainer
 
-local Config = {
-    AutoFarm = false,
-    FastAttack = false,
-    Noclip = false,
-    AutoBuso = false
-}
-
-local function AddToggle(name, callback)
+local function CreateToggleComponent(labelText, callback)
     local state = false
-    local Btn = Instance.new("TextButton")
-    Btn.BackgroundColor3 = Color3.fromRGB(28, 22, 44)
-    Btn.Size = UDim2.new(1, 0, 0, 36)
-    Btn.Font = Enum.Font.GothamMedium
-    Btn.Text = "   " .. name .. ": [ ВЫКЛ ]"
-    Btn.TextColor3 = Color3.fromRGB(180, 170, 210)
-    Btn.TextSize, Btn.TextXAlignment = 12, Enum.TextXAlignment.Left
-    Btn.Parent = Content
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+    local Button = Instance.new("TextButton")
+    Button.BackgroundColor3 = Color3.fromRGB(24, 18, 38)
+    Button.Size = UDim2.new(1, 0, 0, 40)
+    Button.Font = Enum.Font.GothamMedium
+    Button.Text = "   " .. labelText .. ": [ OFF ]"
+    Button.TextColor3 = Color3.fromRGB(190, 180, 220)
+    Button.TextSize = 12
+    Button.TextXAlignment = Enum.TextXAlignment.Left
+    Button.Parent = ScrollContainer
+    
+    Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 8)
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = Color3.fromRGB(80, 40, 150)
+    Stroke.Thickness = 1
+    Stroke.Parent = Button
 
-    Btn.MouseButton1Click:Connect(function()
+    Button.MouseButton1Click:Connect(function()
         state = not state
-        Btn.Text = "   " .. name .. ": [ " .. (state and "ВКЛ" or "ВЫКЛ") .. " ]"
-        Btn.TextColor3 = state and Color3.fromRGB(100, 255, 140) or Color3.fromRGB(180, 170, 210)
+        Button.Text = "   " .. labelText .. ": [ " .. (state and "ACTIVE" or "OFF") .. " ]"
+        Button.TextColor3 = state and Color3.fromRGB(100, 255, 140) or Color3.fromRGB(190, 180, 220)
+        Stroke.Color = state and Color3.fromRGB(70, 220, 100) or Color3.fromRGB(80, 40, 150)
         callback(state)
     end)
 end
 
--- 6. Подключение логики к кнопкам интерфейса
-AddToggle("Авто-Фарм Уровней (Все моря)", function(state) Config.AutoFarm = state end)
-AddToggle("Fast Attack (Быстрый удар)", function(state) Config.FastAttack = state end)
-AddToggle("Noclip (Проход сквозь стены)", function(state) Config.Noclip = state end)
-AddToggle("Авто-Хаки (Buso Haki)", function(state) Config.AutoBuso = state end)
+-- Build Interface Modules
+CreateToggleComponent("Auto-Farm Level (All 3 Seas)", function(val)
+    Settings.AutoFarmLevel = val
+end)
 
--- Цикл Автофарма
+CreateToggleComponent("Fast Attack (Instant Hitbox)", function(val)
+    Settings.FastAttack = val
+end)
+
+CreateToggleComponent("Noclip (Anti-Collision)", function(val)
+    Settings.Noclip = val
+end)
+
+CreateToggleComponent("Auto Buso Haki", function(val)
+    Settings.AutoHaki = val
+end)
+
+CreateToggleComponent("Auto Collect Chests", function(val)
+    Settings.AutoChest = val
+end)
+
+CreateToggleComponent("Auto Collect Fruits", function(val)
+    Settings.AutoFruit = val
+end)
+
+-- [8] AUTONOMOUS MAIN FARM LOOP EXECUTION
 task.spawn(function()
     while task.wait(0.2) do
         pcall(function()
-            if Config.AutoFarm then
-                local qName, qIndex, targetName = GetQuestDetails()
-                local questGui = LocalPlayer.PlayerGui.Main.Quest
+            if Settings.AutoFarmLevel then
+                local character = LocalPlayer.Character
+                if not character or not character:FindFirstChild("HumanoidRootPart") or not character:FindFirstChild("Humanoid") then return end
                 
-                if not questGui.Visible then
-                    if Remotes and Remotes:FindFirstChild("CommF_") then
-                        Remotes.CommF_:InvokeServer("RequestQuest", qName, qIndex)
+                local hrp = character.HumanoidRootPart
+                local humanoid = character.Humanoid
+                if humanoid.Health <= 0 then return end
+
+                local questName, questIndex, mobName, npcPos = GetCurrentQuestDetails()
+
+                -- Step A: Quest Acquisition
+                if not HasActiveQuest() then
+                    CancelTween()
+                    if (hrp.Position - npcPos.Position).Magnitude > 15 then
+                        TweenTo(npcPos + Vector3.new(0, 10, 0))
+                    else
+                        if RemotesFolder and RemotesFolder:FindFirstChild("CommF_") then
+                            RemotesFolder.CommF_:InvokeServer("RequestQuest", questName, questIndex)
+                            task.wait(0.8)
+                        end
                     end
-                    task.wait(1)
                 else
-                    local target = nil
-                    if workspace:FindFirstChild("Enemies") then
-                        for _, enemy in pairs(workspace.Enemies:GetChildren()) do
-                            if enemy.Name == targetName and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-                                target = enemy
+                    -- Step B: Mob Engagement & Farm
+                    local targetMob = nil
+                    local enemiesFolder = Workspace:FindFirstChild("Enemies")
+                    
+                    if enemiesFolder then
+                        for _, enemy in ipairs(enemiesFolder:GetChildren()) do
+                            local enemyHum = enemy:FindFirstChild("Humanoid")
+                            local enemyHrp = enemy:FindFirstChild("HumanoidRootPart")
+                            if enemyHum and enemyHrp and enemyHum.Health > 0 and enemy.Name == mobName then
+                                targetMob = enemy
                                 break
                             end
                         end
                     end
-                    
-                    if target and target:FindFirstChild("HumanoidRootPart") then
-                        local tHrp = target.HumanoidRootPart
-                        FlyTo(tHrp.Position + Vector3.new(0, 12, 0), 320)
-                        
-                        -- Притягивание мобов к себе
-                        for _, e in pairs(workspace.Enemies:GetChildren()) do
-                            if e.Name == targetName and e:FindFirstChild("HumanoidRootPart") then
-                                e.HumanoidRootPart.CFrame = tHrp.CFrame
-                                e.HumanoidRootPart.CanCollide = false
+
+                    -- If specific quest mob not found, find any enemy
+                    if not targetMob and enemiesFolder then
+                        for _, enemy in ipairs(enemiesFolder:GetChildren()) do
+                            local enemyHum = enemy:FindFirstChild("Humanoid")
+                            local enemyHrp = enemy:FindFirstChild("HumanoidRootPart")
+                            if enemyHum and enemyHrp and enemyHum.Health > 0 then
+                                targetMob = enemy
+                                break
                             end
+                        end
+                    end
+
+                    if targetMob and targetMob:FindFirstChild("HumanoidRootPart") then
+                        local mobHrp = targetMob.HumanoidRootPart
+                        
+                        -- Keep character floating safely above the target mob
+                        humanoid.PlatformStand = true
+                        hrp.CFrame = mobHrp.CFrame + Vector3.new(0, Settings.AttackDistance, 0)
+                        hrp.Velocity = Vector3.new(0, 0, 0)
+
+                        -- Equip tool and attack
+                        local equippedTool = GetEquippedTool()
+                        if not equippedTool then
+                            local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
+                            if backpack then
+                                for _, item in ipairs(backpack:GetChildren()) do
+                                    if item:IsA("Tool") then
+                                        item.Parent = character
+                                        equippedTool = item
+                                        break
+                                    end
+                                end
+                            end
+                        end
+
+                        if equippedTool then
+                            equippedTool:Activate()
+                        end
+
+                        -- Mob Bring / Cluster Optimization
+                        if enemiesFolder then
+                            for _, enemy in ipairs(enemiesFolder:GetChildren()) do
+                                if enemy.Name == mobName and enemy:FindFirstChild("HumanoidRootPart") then
+                                    local eHrp = enemy.HumanoidRootPart
+                                    eHrp.CFrame = mobHrp.CFrame
+                                    eHrp.CanCollide = false
+                                    local eHum = enemy:FindFirstChildOfClass("Humanoid")
+                                    if eHum then
+                                        eHum.WalkSpeed = 0
+                                    end
+                                end
+                            end
+                        end
+                    else
+                        humanoid.PlatformStand = false
+                    end
+                end
+            else
+                local character = LocalPlayer.Character
+                if character and character:FindFirstChild("Humanoid") then
+                    character.Humanoid.PlatformStand = false
+                end
+            end
+        end)
+    end
+end)
+
+-- [9] FAST ATTACK & COMBAT ENHANCEMENT THREAD
+task.spawn(function()
+    while task.wait(0.04) do
+        pcall(function()
+            if Settings.FastAttack then
+                local character = LocalPlayer.Character
+                if character then
+                    local tool = GetEquippedTool()
+                    if tool and tool:FindFirstChild("Handle") then
+                        tool:Activate()
+                        if CombatFrameworkR and CombatFrameworkR.activeController then
+                            CombatFrameworkR.activeController.timeToNextAttack = 0
+                            CombatFrameworkR.activeController.hitboxMagnitude = 60
+                            CombatFrameworkR.activeController:attack()
                         end
                     end
                 end
@@ -606,48 +518,37 @@ task.spawn(function()
     end
 end)
 
--- Цикл Fast Attack
-task.spawn(function()
-    while task.wait(0.05) do
-        pcall(function()
-            if Config.FastAttack then
-                local char = LocalPlayer.Character
-                if char then
-                    local tool = char:FindFirstChildOfClass("Tool")
-                    if tool and tool:FindFirstChild("Handle") then
-                        tool:Activate()
-                    end
-                end
-            end
-        end)
-    end
-end)
-
--- Цикл Noclip и Buso
+-- [10] PASSIVE SYSTEMS: NOCLIP & AUTO HAKI
 RunService.Stepped:Connect(function()
-    if Config.Noclip and LocalPlayer.Character then
-        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then 
-                part.CanCollide = false 
+    if Settings.Noclip and LocalPlayer.Character then
+        local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 0, hrp.AssemblyLinearVelocity.Z)
+        end
+        for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                part.CanCollide = false
             end
         end
     end
 end)
 
 task.spawn(function()
-    while task.wait(3) do
+    while task.wait(2) do
         pcall(function()
-            if Config.AutoBuso and LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Buso") then
-                if Remotes and Remotes:FindFirstChild("CommF_") then
-                    Remotes.CommF_:InvokeServer("Buso")
+            if Settings.AutoHaki then
+                local character = LocalPlayer.Character
+                if character and not character:FindFirstChild("Buso") and RemotesFolder and RemotesFolder:FindFirstChild("CommF_") then
+                    RemotesFolder.CommF_:InvokeServer("Buso")
                 end
             end
         end)
     end
 end)
 
+-- [11] NOTIFICATION INITIALIZATION
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "⚡ Прокачка активирована",
-    Text = "Интерфейс успешно загружен. Всё работает плавно!",
+    Title = "⚡ Quantum God Hub Loaded",
+    Text = "Framework successfully initialized. Enjoy seamless autofarm!",
     Duration = 5
 })
