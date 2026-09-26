@@ -1,18 +1,16 @@
 -- ==============================================================================
--- PROJECT: QUANTUM GOD HUB (ENTERPRISE MASTER EDITION)
--- ARCHITECTURE: Monolithic Modular Architecture / Strict Error-Boundary Layer
+-- PROJECT: QUANTUM GOD HUB (ENTERPRISE MASTER EDITION v6.0)
+-- ARCHITECTURE: Strict Monolithic Error-Boundary Framework
 -- TARGET: Universal Mobile & PC Executor Environment (Delta, Codex, Fluxus, etc.)
--- VERSION: 5.4.2-STABLE (800+ Lines Enterprise Production Build)
 -- ==============================================================================
 
--- [1] INITIALIZATION & GLOBAL ENVIRONMENT SAFETY GUARD
 print("[QuantumCore] Initializing Quantum God Hub Master Engine...")
 
 if _G.QuantumGodHubEnterpriseRunning then
     pcall(function()
         _G.QuantumGodHubEnterpriseRunning:Destroy()
     end)
-    print("[QuantumCore] Destroyed existing active instance of Quantum God Hub.")
+    print("[QuantumCore] Destroyed existing active instance.")
 end
 
 local CoreGui = game:GetService("CoreGui")
@@ -22,22 +20,20 @@ local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local VirtualUser = game:GetService("VirtualUser")
-local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
 local Workspace = game:GetService("Workspace")
 local StarterGui = game:GetService("StarterGui")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- [2] SECURE GRAPHICAL ROOT CONTAINER SETUP
+-- [1] SECURE GRAPHICAL ROOT CONTAINER SETUP
 local RootScreenGui = Instance.new("ScreenGui")
 RootScreenGui.Name = "QuantumGodHubMasterContainer"
 RootScreenGui.ResetOnSpawn = false
 RootScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 RootScreenGui.IgnoreGuiInset = true
 
-local parentSuccess, parentError = pcall(function()
+local parentSuccess = pcall(function()
     if syn and syn.protect_gui then
         syn.protect_gui(RootScreenGui)
         RootScreenGui.Parent = CoreGui
@@ -50,14 +46,11 @@ end)
 
 if not parentSuccess or not RootScreenGui.Parent then
     RootScreenGui.Parent = PlayerGui
-    warn("[QuantumCore] Fallback container parented to PlayerGui.")
-else
-    print("[QuantumCore] Container secured under protected root layer.")
 end
 
 _G.QuantumGodHubEnterpriseRunning = RootScreenGui
 
--- [3] COMPREHENSIVE CONFIGURATION & STATE STORE
+-- [2] CONFIGURATION STATE STORE
 local HubConfig = {
     AutoFarmLevel = false,
     FastAttack = false,
@@ -65,13 +58,11 @@ local HubConfig = {
     AutoHaki = false,
     AutoChest = false,
     AutoFruit = false,
-    SelectedWeapon = "Melee",
-    AttackDistance = 15,
-    TweenSpeed = 350,
-    ThemeMode = "DarkCyber"
+    AttackDistance = 14,
+    TweenSpeed = 320
 }
 
--- [4] SYSTEM UTILITIES & ANTI-AFK PROTOCOL
+-- [3] ANTI-AFK & REMOTES
 LocalPlayer.Idled:Connect(function()
     pcall(function()
         VirtualUser:CaptureController()
@@ -95,15 +86,9 @@ local function LocateRemotesFolder()
 end
 
 local RemotesDirectory = LocateRemotesFolder()
-if RemotesDirectory then
-    print("[QuantumCore] Communication Remotes located successfully.")
-else
-    warn("[QuantumCore] Warning: CommF_ remotes not found automatically. Retrying dynamically...")
-end
 
--- [5] ADVANCED LEVEL & QUEST DATABASE (ALL 3 SEAS FULL MAPPING)
+-- [4] COMPREHENSIVE QUEST DATABASE (ALL 3 SEAS)
 local ComprehensiveQuestDatabase = {
-    -- SEA 1
     {Min = 1, Max = 9, QuestName = "BanditQuest1", Index = 1, MobName = "Bandit", NpcPos = CFrame.new(1059, 16, 1549)},
     {Min = 10, Max = 14, QuestName = "JungleQuest", Index = 1, MobName = "Monkey", NpcPos = CFrame.new(-1598, 36, 153)},
     {Min = 15, Max = 29, QuestName = "JungleQuest", Index = 2, MobName = "Gorilla", NpcPos = CFrame.new(-1598, 36, 153)},
@@ -128,8 +113,6 @@ local ComprehensiveQuestDatabase = {
     {Min = 525, Max = 549, QuestName = "ImpelQuest", Index = 2, MobName = "Shanda", NpcPos = CFrame.new(-7859, 5545, -381)},
     {Min = 550, Max = 624, QuestName = "FountainQuest", Index = 1, MobName = "Galley Pirate", NpcPos = CFrame.new(5259, 38, 4050)},
     {Min = 625, Max = 699, QuestName = "FountainQuest", Index = 2, MobName = "Galley Captain", NpcPos = CFrame.new(5259, 38, 4050)},
-
-    -- SEA 2
     {Min = 700, Max = 724, QuestName = "Area1Quest", Index = 1, MobName = "Raider", NpcPos = CFrame.new(-424, 73, 1836)},
     {Min = 725, Max = 774, QuestName = "Area1Quest", Index = 2, MobName = "Mercenary", NpcPos = CFrame.new(-424, 73, 1836)},
     {Min = 775, Max = 799, QuestName = "Area2Quest", Index = 1, MobName = "Swan Pirate", NpcPos = CFrame.new(638, 73, 918)},
@@ -147,8 +130,6 @@ local ComprehensiveQuestDatabase = {
     {Min = 1300, Max = 1349, QuestName = "ShipQuest1", Index = 1, MobName = "Ship Deckhand", NpcPos = CFrame.new(1038, 125, 32911)},
     {Min = 1350, Max = 1424, QuestName = "ShipQuest1", Index = 2, MobName = "Ship Engineer", NpcPos = CFrame.new(1038, 125, 32911)},
     {Min = 1425, Max = 1499, QuestName = "CursedQuest1", Index = 1, MobName = "Saber Expert", NpcPos = CFrame.new(-2228, 13, -3044)},
-
-    -- SEA 3
     {Min = 1500, Max = 1524, QuestName = "PiratePortQuest", Index = 1, MobName = "Pirate Millionaire", NpcPos = CFrame.new(-290, 43, 5581)},
     {Min = 1525, Max = 1574, QuestName = "PiratePortQuest", Index = 2, MobName = "Pistol Billionaire", NpcPos = CFrame.new(-290, 43, 5581)},
     {Min = 1575, Max = 1624, QuestName = "AmazonQuest", Index = 1, MobName = "Island Boy", NpcPos = CFrame.new(5446, 600, 755)},
@@ -191,7 +172,7 @@ local function IsQuestActiveOnScreen()
     return success and visible or false
 end
 
--- [6] ADVANCED MOVEMENT & INTERPOLATION ENGINE
+-- [5] TWEEN ENGINE
 local MasterTweenReference = nil
 
 local function AbortActiveTween()
@@ -238,14 +219,7 @@ local function ExecuteTweenToCFrame(destinationCFrame)
     end)
 end
 
--- [7] FAST ATTACK COMBAT SYSTEM HOOK
-local CombatFrameworkModule = nil
-local CombatFrameworkRemoteRef = nil
-pcall(function()
-    CombatFrameworkModule = require(LocalPlayer.PlayerScripts:WaitForChild("CombatFramework"))
-    CombatFrameworkRemoteRef = getupvalues(CombatFrameworkModule)[2]
-end)
-
+-- [6] COMBAT TOOL GETTER
 local function GetActiveEquippedTool()
     local character = LocalPlayer.Character
     if not character then return nil end
@@ -257,13 +231,12 @@ local function GetActiveEquippedTool()
     return nil
 end
 
--- [8] GRAPHICAL USER INTERFACE MASTER ARCHITECTURE (CUSTOM WINDOW)
-local WindowWidth, WindowHeight = 540, 395
+-- [7] GRAPHICAL USER INTERFACE (GUI)
 local PrimaryCard = Instance.new("Frame")
 PrimaryCard.Name = "QuantumPrimaryCard"
 PrimaryCard.AnchorPoint = Vector2.new(0.5, 0.5)
 PrimaryCard.Position = UDim2.new(0.5, 0, 0.5, 0)
-PrimaryCard.Size = UDim2.new(0, WindowWidth, 0, WindowHeight)
+PrimaryCard.Size = UDim2.new(0, 520, 0, 380)
 PrimaryCard.BackgroundColor3 = Color3.fromRGB(14, 11, 24)
 PrimaryCard.ClipsDescendants = true
 PrimaryCard.Parent = RootScreenGui
@@ -274,7 +247,6 @@ CardOutlineStroke.Color = Color3.fromRGB(120, 45, 230)
 CardOutlineStroke.Thickness = 1.8
 CardOutlineStroke.Parent = PrimaryCard
 
--- Window Header Frame
 local WindowHeader = Instance.new("Frame")
 WindowHeader.Name = "WindowHeader"
 WindowHeader.BackgroundColor3 = Color3.fromRGB(22, 16, 36)
@@ -287,14 +259,13 @@ HeaderTitleText.BackgroundTransparency = 1
 HeaderTitleText.Position = UDim2.new(0, 15, 0, 0)
 HeaderTitleText.Size = UDim2.new(1, -90, 1, 0)
 HeaderTitleText.Font = Enum.Font.GothamBold
-HeaderTitleText.Text = "⚡ Quantum God Hub | Master Enterprise Hub"
+HeaderTitleText.Text = "⚡ Quantum God Hub | Enterprise Edition"
 HeaderTitleText.TextColor3 = Color3.fromRGB(230, 210, 255)
 HeaderTitleText.TextSize = 13
 HeaderTitleText.TextXAlignment = Enum.TextXAlignment.Left
 HeaderTitleText.Parent = WindowHeader
 
--- Drag Logic Controller
-local IsWindowDragging, DragInputRef, DragStartPoint, WindowStartPos
+local IsWindowDragging, DragStartPoint, WindowStartPos
 WindowHeader.InputBegan:Connect(function(inputObject)
     if inputObject.UserInputType == Enum.UserInputType.MouseButton1 or inputObject.UserInputType == Enum.UserInputType.Touch then
         IsWindowDragging = true
@@ -315,7 +286,6 @@ UserInputService.InputChanged:Connect(function(inputObject)
     end
 end)
 
--- Close Action Button
 local CloseActionButton = Instance.new("TextButton")
 CloseActionButton.BackgroundTransparency = 1
 CloseActionButton.Position = UDim2.new(1, -40, 0, 7)
@@ -329,16 +299,14 @@ CloseActionButton.Parent = WindowHeader
 CloseActionButton.MouseButton1Click:Connect(function()
     RootScreenGui:Destroy()
     _G.QuantumGodHubEnterpriseRunning = nil
-    print("[QuantumCore] Hub terminated by user interface request.")
 end)
 
--- Main Scroll Container Component
 local MainScrollContainer = Instance.new("ScrollingFrame")
 MainScrollContainer.Name = "MainScrollContainer"
 MainScrollContainer.BackgroundTransparency = 1
 MainScrollContainer.Position = UDim2.new(0, 15, 0, 54)
 MainScrollContainer.Size = UDim2.new(1, -30, 1, -66)
-MainScrollContainer.CanvasSize = UDim2.new(0, 0, 0, 650)
+MainScrollContainer.CanvasSize = UDim2.new(0, 0, 0, 450)
 MainScrollContainer.ScrollBarThickness = 4
 MainScrollContainer.Parent = PrimaryCard
 
@@ -373,32 +341,31 @@ local function ConstructToggleComponent(titleString, callbackFunction)
     end)
 end
 
--- Instantiate GUI Elements
 ConstructToggleComponent("Auto-Farm Level (All 3 Seas)", function(state)
     HubConfig.AutoFarmLevel = state
 end)
 
-ConstructToggleComponent("Fast Attack (Instant Combat Module)", function(state)
+ConstructToggleComponent("Fast Attack (Instant Combat)", function(state)
     HubConfig.FastAttack = state
 end)
 
-ConstructToggleComponent("Noclip (Anti-Collision System)", function(state)
+ConstructToggleComponent("Noclip (Anti-Collision)", function(state)
     HubConfig.Noclip = state
 end)
 
-ConstructToggleComponent("Auto Buso Haki (Armament Aura)", function(state)
+ConstructToggleComponent("Auto Buso Haki", function(state)
     HubConfig.AutoHaki = state
 end)
 
-ConstructToggleComponent("Auto Collect Nearest Chests", function(state)
+ConstructToggleComponent("Auto Collect Chests", function(state)
     HubConfig.AutoChest = state
 end)
 
-ConstructToggleComponent("Auto Collect Spawned Fruits", function(state)
+ConstructToggleComponent("Auto Collect Fruits", function(state)
     HubConfig.AutoFruit = state
 end)
 
--- [9] AUTONOMOUS MASTER AUTO-FARM ENGINE LOOP
+-- [8] AUTONOMOUS MAIN AUTO-FARM ENGINE LOOP
 task.spawn(function()
     while task.wait(0.18) do
         pcall(function()
@@ -412,7 +379,6 @@ task.spawn(function()
 
                 local questName, questIndex, targetMobName, npcPosition = FetchCurrentQuestDetails()
 
-                -- Phase 1: Quest Validation & Acquisition
                 if not IsQuestActiveOnScreen() then
                     AbortActiveTween()
                     if (hrp.Position - npcPosition.Position).Magnitude > 18 then
@@ -424,7 +390,6 @@ task.spawn(function()
                         end
                     end
                 else
-                    -- Phase 2: Autonomous Mob Engagement & Combat Management
                     local targetMobInstance = nil
                     local enemiesFolderRef = Workspace:FindFirstChild("Enemies")
                     
@@ -439,7 +404,6 @@ task.spawn(function()
                         end
                     end
 
-                    -- Fallback scan for generic enemies if specific quest target is unavailable
                     if not targetMobInstance and enemiesFolderRef then
                         for _, enemyModel in ipairs(enemiesFolderRef:GetChildren()) do
                             local enemyHum = enemyModel:FindFirstChild("Humanoid")
@@ -454,12 +418,10 @@ task.spawn(function()
                     if targetMobInstance and targetMobInstance:FindFirstChild("HumanoidRootPart") then
                         local mobRootPart = targetMobInstance.HumanoidRootPart
                         
-                        -- Secure suspension above target to avoid melee hitbox damage
                         humanoid.PlatformStand = true
                         hrp.CFrame = mobRootPart.CFrame + Vector3.new(0, HubConfig.AttackDistance, 0)
                         hrp.Velocity = Vector3.new(0, 0, 0)
 
-                        -- Ensure weapon tool is equipped
                         local activeTool = GetActiveEquippedTool()
                         if not activeTool then
                             local backpackContainer = LocalPlayer:FindFirstChildOfClass("Backpack")
@@ -478,7 +440,6 @@ task.spawn(function()
                             activeTool:Activate()
                         end
 
-                        -- Advanced Cluster / Bring Mob Optimization
                         if enemiesFolderRef then
                             for _, enemyModel in ipairs(enemiesFolderRef:GetChildren()) do
                                 if enemyModel.Name == targetMobName and enemyModel:FindFirstChild("HumanoidRootPart") then
@@ -506,7 +467,7 @@ task.spawn(function()
     end
 end)
 
--- [10] FAST ATTACK & COMBAT ACCELERATION WORKER THREAD
+-- [9] FAST ATTACK WORKER THREAD
 task.spawn(function()
     while task.wait(0.035) do
         pcall(function()
@@ -516,11 +477,6 @@ task.spawn(function()
                     local equippedToolRef = GetActiveEquippedTool()
                     if equippedToolRef and equippedToolRef:FindFirstChild("Handle") then
                         equippedToolRef:Activate()
-                        if CombatFrameworkRemoteRef and CombatFrameworkRemoteRef.activeController then
-                            CombatFrameworkRemoteRef.activeController.timeToNextAttack = 0
-                            CombatFrameworkRemoteRef.activeController.hitboxMagnitude = 65
-                            CombatFrameworkRemoteRef.activeController:attack()
-                        end
                     end
                 end
             end
@@ -528,7 +484,7 @@ task.spawn(function()
     end
 end)
 
--- [11] PASSIVE RUNSERVICE MODULE: NOCLIP COLLISION BYPASS
+-- [10] PASSIVE NOCLIP MODULE
 RunService.Stepped:Connect(function()
     if HubConfig.Noclip and LocalPlayer.Character then
         local hrpRef = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -543,7 +499,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- [12] PASSIVE HAKI MAINTENANCE WORKER THREAD
+-- [11] PASSIVE HAKI MAINTENANCE
 task.spawn(function()
     while task.wait(2) do
         pcall(function()
@@ -557,7 +513,7 @@ task.spawn(function()
     end
 end)
 
--- [13] PASSIVE CHEST & FRUIT COLLECTION UTILITY LOOP
+-- [12] PASSIVE CHEST & FRUIT COLLECTION
 task.spawn(function()
     while task.wait(0.5) do
         pcall(function()
@@ -587,13 +543,13 @@ task.spawn(function()
     end
 end)
 
--- [14] FINAL SYSTEM NOTIFICATION INITIALIZATION
+-- [13] NOTIFICATION
 pcall(function()
     StarterGui:SetCore("SendNotification", {
         Title = "⚡ Quantum God Hub Enterprise",
-        Text = "Master Framework successfully compiled (800+ lines). All systems operational!",
+        Text = "Master Framework successfully compiled and loaded!",
         Duration = 6
     })
 end)
 
-print("[QuantumCore] Quantum God Hub Master Enterprise script execution completed without errors.")
+print("[QuantumCore] Execution completed successfully without syntax errors.")
