@@ -1,16 +1,11 @@
 -- ==============================================================================
--- PROJECT: QUANTUM GOD HUB (ENTERPRISE MASTER EDITION v6.0)
--- ARCHITECTURE: Strict Monolithic Error-Boundary Framework
--- TARGET: Universal Mobile & PC Executor Environment (Delta, Codex, Fluxus, etc.)
+-- PROJECT: QUANTUM GOD HUB (ENTERPRISE EDITION v6.2 - COMBAT FIX)
 -- ==============================================================================
 
-print("[QuantumCore] Initializing Quantum God Hub Master Engine...")
+print("[QuantumCore] Initializing Combat & Farm Fix...")
 
 if _G.QuantumGodHubEnterpriseRunning then
-    pcall(function()
-        _G.QuantumGodHubEnterpriseRunning:Destroy()
-    end)
-    print("[QuantumCore] Destroyed existing active instance.")
+    pcall(function() _G.QuantumGodHubEnterpriseRunning:Destroy() end)
 end
 
 local CoreGui = game:GetService("CoreGui")
@@ -26,14 +21,14 @@ local StarterGui = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- [1] SECURE GRAPHICAL ROOT CONTAINER SETUP
+-- [1] GUI CONTAINER
 local RootScreenGui = Instance.new("ScreenGui")
 RootScreenGui.Name = "QuantumGodHubMasterContainer"
 RootScreenGui.ResetOnSpawn = false
 RootScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 RootScreenGui.IgnoreGuiInset = true
 
-local parentSuccess = pcall(function()
+pcall(function()
     if syn and syn.protect_gui then
         syn.protect_gui(RootScreenGui)
         RootScreenGui.Parent = CoreGui
@@ -43,23 +38,17 @@ local parentSuccess = pcall(function()
         RootScreenGui.Parent = CoreGui
     end
 end)
-
-if not parentSuccess or not RootScreenGui.Parent then
-    RootScreenGui.Parent = PlayerGui
-end
-
+if not RootScreenGui.Parent then RootScreenGui.Parent = PlayerGui end
 _G.QuantumGodHubEnterpriseRunning = RootScreenGui
 
--- [2] CONFIGURATION STATE STORE
+-- [2] CONFIG
 local HubConfig = {
     AutoFarmLevel = false,
     FastAttack = false,
     Noclip = false,
     AutoHaki = false,
-    AutoChest = false,
-    AutoFruit = false,
-    AttackDistance = 14,
-    TweenSpeed = 320
+    AttackDistance = 6, -- Уменьшено для точного попадания оружием ближнего боя
+    TweenSpeed = 300
 }
 
 -- [3] ANTI-AFK & REMOTES
@@ -84,10 +73,9 @@ local function LocateRemotesFolder()
     end
     return folder
 end
-
 local RemotesDirectory = LocateRemotesFolder()
 
--- [4] COMPREHENSIVE QUEST DATABASE (ALL 3 SEAS)
+-- [4] QUEST DATABASE (ALL 3 SEAS)
 local ComprehensiveQuestDatabase = {
     {Min = 1, Max = 9, QuestName = "BanditQuest1", Index = 1, MobName = "Bandit", NpcPos = CFrame.new(1059, 16, 1549)},
     {Min = 10, Max = 14, QuestName = "JungleQuest", Index = 1, MobName = "Monkey", NpcPos = CFrame.new(-1598, 36, 153)},
@@ -154,9 +142,7 @@ local ComprehensiveQuestDatabase = {
 
 local function FetchCurrentQuestDetails()
     local playerLevel = 1
-    pcall(function()
-        playerLevel = LocalPlayer.Data.Level.Value
-    end)
+    pcall(function() playerLevel = LocalPlayer.Data.Level.Value end)
     for _, questData in ipairs(ComprehensiveQuestDatabase) do
         if playerLevel >= questData.Min and playerLevel <= questData.Max then
             return questData.QuestName, questData.Index, questData.MobName, questData.NpcPos
@@ -172,311 +158,219 @@ local function IsQuestActiveOnScreen()
     return success and visible or false
 end
 
--- [5] TWEEN ENGINE
-local MasterTweenReference = nil
-
-local function AbortActiveTween()
-    if MasterTweenReference then
-        MasterTweenReference:Cancel()
-        MasterTweenReference = nil
-    end
-    pcall(function()
-        local character = LocalPlayer.Character
-        if character and character:FindFirstChild("HumanoidRootPart") then
-            local velocityHolder = character.HumanoidRootPart:FindFirstChild("QuantumMasterVelocityHolder")
-            if velocityHolder then
-                velocityHolder:Destroy()
+-- [5] EQUIP TOOL FIX (Принудительно берет оружие в руки)
+local function EquipWeapon()
+    local character = LocalPlayer.Character
+    if not character then return end
+    if character:FindFirstChildOfClass("Tool") then return end -- Уже в руках
+    
+    local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
+    if backpack then
+        for _, item in ipairs(backpack:GetChildren()) do
+            if item:IsA("Tool") then
+                item.Parent = character
+                break
             end
         end
-    end)
-end
-
-local function ExecuteTweenToCFrame(destinationCFrame)
-    local character = LocalPlayer.Character
-    if not character or not character:FindFirstChild("HumanoidRootPart") or not character:FindFirstChild("Humanoid") then return end
-    
-    local hrp = character.HumanoidRootPart
-    local totalDistance = (hrp.Position - destinationCFrame.Position).Magnitude
-    
-    if MasterTweenReference then
-        AbortActiveTween()
     end
-
-    local velocityHolder = Instance.new("BodyVelocity")
-    velocityHolder.Name = "QuantumMasterVelocityHolder"
-    velocityHolder.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    velocityHolder.Velocity = Vector3.new(0, 0, 0)
-    velocityHolder.Parent = hrp
-
-    local calculatedDuration = totalDistance / HubConfig.TweenSpeed
-    local tweenInfoConfig = TweenInfo.new(calculatedDuration, Enum.EasingStyle.Linear)
-    
-    MasterTweenReference = TweenService:Create(hrp, tweenInfoConfig, {CFrame = destinationCFrame})
-    MasterTweenReference:Play()
-    
-    MasterTweenReference.Completed:Connect(function()
-        AbortActiveTween()
-    end)
 end
 
--- [6] COMBAT TOOL GETTER
-local function GetActiveEquippedTool()
-    local character = LocalPlayer.Character
-    if not character then return nil end
-    for _, item in ipairs(character:GetChildren()) do
-        if item:IsA("Tool") then
-            return item
-        end
-    end
-    return nil
-end
-
--- [7] GRAPHICAL USER INTERFACE (GUI)
+-- [6] GUI SETUP
 local PrimaryCard = Instance.new("Frame")
-PrimaryCard.Name = "QuantumPrimaryCard"
-PrimaryCard.AnchorPoint = Vector2.new(0.5, 0.5)
-PrimaryCard.Position = UDim2.new(0.5, 0, 0.5, 0)
 PrimaryCard.Size = UDim2.new(0, 520, 0, 380)
+PrimaryCard.Position = UDim2.new(0.5, -260, 0.5, -190)
 PrimaryCard.BackgroundColor3 = Color3.fromRGB(14, 11, 24)
 PrimaryCard.ClipsDescendants = true
 PrimaryCard.Parent = RootScreenGui
 
 Instance.new("UICorner", PrimaryCard).CornerRadius = UDim.new(0, 12)
-local CardOutlineStroke = Instance.new("UIStroke")
-CardOutlineStroke.Color = Color3.fromRGB(120, 45, 230)
-CardOutlineStroke.Thickness = 1.8
-CardOutlineStroke.Parent = PrimaryCard
+local CardOutline = Instance.new("UIStroke")
+CardOutline.Color = Color3.fromRGB(120, 45, 230)
+CardOutline.Thickness = 1.8
+CardOutline.Parent = PrimaryCard
 
 local WindowHeader = Instance.new("Frame")
-WindowHeader.Name = "WindowHeader"
-WindowHeader.BackgroundColor3 = Color3.fromRGB(22, 16, 36)
 WindowHeader.Size = UDim2.new(1, 0, 0, 44)
+WindowHeader.BackgroundColor3 = Color3.fromRGB(22, 16, 36)
 WindowHeader.Parent = PrimaryCard
 Instance.new("UICorner", WindowHeader).CornerRadius = UDim.new(0, 12)
 
-local HeaderTitleText = Instance.new("TextLabel")
-HeaderTitleText.BackgroundTransparency = 1
-HeaderTitleText.Position = UDim2.new(0, 15, 0, 0)
-HeaderTitleText.Size = UDim2.new(1, -90, 1, 0)
-HeaderTitleText.Font = Enum.Font.GothamBold
-HeaderTitleText.Text = "⚡ Quantum God Hub | Enterprise Edition"
-HeaderTitleText.TextColor3 = Color3.fromRGB(230, 210, 255)
-HeaderTitleText.TextSize = 13
-HeaderTitleText.TextXAlignment = Enum.TextXAlignment.Left
-HeaderTitleText.Parent = WindowHeader
+local HeaderTitle = Instance.new("TextLabel")
+HeaderTitle.Size = UDim2.new(1, -90, 1, 0)
+HeaderTitle.Position = UDim2.new(0, 15, 0, 0)
+HeaderTitle.BackgroundTransparency = 1
+HeaderTitle.Font = Enum.Font.GothamBold
+HeaderTitle.Text = "⚡ Quantum God Hub | Combat Fixed"
+HeaderTitle.TextColor3 = Color3.fromRGB(230, 210, 255)
+HeaderTitle.TextSize = 13
+HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+HeaderTitle.Parent = WindowHeader
 
-local IsWindowDragging, DragStartPoint, WindowStartPos
-WindowHeader.InputBegan:Connect(function(inputObject)
-    if inputObject.UserInputType == Enum.UserInputType.MouseButton1 or inputObject.UserInputType == Enum.UserInputType.Touch then
-        IsWindowDragging = true
-        DragStartPoint = inputObject.Position
-        WindowStartPos = PrimaryCard.Position
-        inputObject.Changed:Connect(function()
-            if inputObject.UserInputState == Enum.UserInputState.End then
-                IsWindowDragging = false
-            end
-        end)
+-- Перетаскивание
+local dragging, dragStart, startPos
+WindowHeader.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = PrimaryCard.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        PrimaryCard.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
     end
 end)
 
-UserInputService.InputChanged:Connect(function(inputObject)
-    if IsWindowDragging and (inputObject.UserInputType == Enum.UserInputType.MouseMovement or inputObject.UserInputType == Enum.UserInputType.Touch) then
-        local deltaVector = inputObject.Position - DragStartPoint
-        PrimaryCard.Position = UDim2.new(WindowStartPos.X.Scale, WindowStartPos.X.Offset + deltaVector.X, WindowStartPos.Y.Scale, WindowStartPos.Y.Offset + deltaVector.Y)
-    end
-end)
-
-local CloseActionButton = Instance.new("TextButton")
-CloseActionButton.BackgroundTransparency = 1
-CloseActionButton.Position = UDim2.new(1, -40, 0, 7)
-CloseActionButton.Size = UDim2.new(0, 30, 0, 30)
-CloseActionButton.Font = Enum.Font.GothamBold
-CloseActionButton.Text = "✕"
-CloseActionButton.TextColor3 = Color3.fromRGB(240, 80, 80)
-CloseActionButton.TextSize = 16
-CloseActionButton.Parent = WindowHeader
-
-CloseActionButton.MouseButton1Click:Connect(function()
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -40, 0, 7)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(240, 80, 80)
+CloseBtn.TextSize = 16
+CloseBtn.Parent = WindowHeader
+CloseBtn.MouseButton1Click:Connect(function()
     RootScreenGui:Destroy()
     _G.QuantumGodHubEnterpriseRunning = nil
 end)
 
-local MainScrollContainer = Instance.new("ScrollingFrame")
-MainScrollContainer.Name = "MainScrollContainer"
-MainScrollContainer.BackgroundTransparency = 1
-MainScrollContainer.Position = UDim2.new(0, 15, 0, 54)
-MainScrollContainer.Size = UDim2.new(1, -30, 1, -66)
-MainScrollContainer.CanvasSize = UDim2.new(0, 0, 0, 450)
-MainScrollContainer.ScrollBarThickness = 4
-MainScrollContainer.Parent = PrimaryCard
+local ScrollContainer = Instance.new("ScrollingFrame")
+ScrollContainer.Size = UDim2.new(1, -30, 1, -66)
+ScrollContainer.Position = UDim2.new(0, 15, 0, 54)
+ScrollContainer.BackgroundTransparency = 1
+ScrollContainer.CanvasSize = UDim2.new(0, 0, 0, 400)
+ScrollContainer.ScrollBarThickness = 4
+ScrollContainer.Parent = PrimaryCard
 
-local LayoutManager = Instance.new("UIListLayout")
-LayoutManager.Padding = UDim.new(0, 8)
-LayoutManager.Parent = MainScrollContainer
+local UIList = Instance.new("UIListLayout")
+UIList.Padding = UDim.new(0, 8)
+UIList.Parent = ScrollContainer
 
-local function ConstructToggleComponent(titleString, callbackFunction)
-    local toggleState = false
-    local componentButton = Instance.new("TextButton")
-    componentButton.BackgroundColor3 = Color3.fromRGB(26, 20, 42)
-    componentButton.Size = UDim2.new(1, 0, 0, 40)
-    componentButton.Font = Enum.Font.GothamMedium
-    componentButton.Text = "   " .. titleString .. ": [ OFF ]"
-    componentButton.TextColor3 = Color3.fromRGB(190, 180, 220)
-    componentButton.TextSize = 12
-    componentButton.TextXAlignment = Enum.TextXAlignment.Left
-    componentButton.Parent = MainScrollContainer
-    
-    Instance.new("UICorner", componentButton).CornerRadius = UDim.new(0, 8)
-    local buttonStroke = Instance.new("UIStroke")
-    buttonStroke.Color = Color3.fromRGB(85, 45, 160)
-    buttonStroke.Thickness = 1
-    buttonStroke.Parent = componentButton
+local function AddToggle(text, callback)
+    local state = false
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 40)
+    btn.BackgroundColor3 = Color3.fromRGB(26, 20, 42)
+    btn.Font = Enum.Font.GothamMedium
+    btn.Text = "   " + text + ": [ OFF ]" -- исправление строк
+    btn.TextColor3 = Color3.fromRGB(190, 180, 220)
+    btn.TextSize, btn.TextXAlignment = 12, Enum.TextXAlignment.Left
+    btn.Parent = ScrollContainer
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
 
-    componentButton.MouseButton1Click:Connect(function()
-        toggleState = not toggleState
-        componentButton.Text = "   " .. titleString .. ": [ " .. (toggleState and "ACTIVE" or "OFF") .. " ]"
-        componentButton.TextColor3 = toggleState and Color3.fromRGB(100, 255, 140) or Color3.fromRGB(190, 180, 220)
-        buttonStroke.Color = toggleState and Color3.fromRGB(70, 220, 100) or Color3.fromRGB(85, 45, 160)
-        callbackFunction(toggleState)
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = "   " .. text .. ": [ " .. (state and "ACTIVE" or "OFF") .. " ]"
+        btn.TextColor3 = state and Color3.fromRGB(100, 255, 140) or Color3.fromRGB(190, 180, 220)
+        callback(state)
     end)
 end
 
-ConstructToggleComponent("Auto-Farm Level (All 3 Seas)", function(state)
-    HubConfig.AutoFarmLevel = state
-end)
+AddToggle("Auto-Farm Level (All 3 Seas)", function(v) HubConfig.AutoFarmLevel = v end)
+AddToggle("Fast Attack (Instant Hit)", function(v) HubConfig.FastAttack = v end)
+AddToggle("Noclip (Anti-Collision)", function(v) HubConfig.Noclip = v end)
+AddToggle("Auto Buso Haki", function(v) HubConfig.AutoHaki = v end)
 
-ConstructToggleComponent("Fast Attack (Instant Combat)", function(state)
-    HubConfig.FastAttack = state
-end)
-
-ConstructToggleComponent("Noclip (Anti-Collision)", function(state)
-    HubConfig.Noclip = state
-end)
-
-ConstructToggleComponent("Auto Buso Haki", function(state)
-    HubConfig.AutoHaki = state
-end)
-
-ConstructToggleComponent("Auto Collect Chests", function(state)
-    HubConfig.AutoChest = state
-end)
-
-ConstructToggleComponent("Auto Collect Fruits", function(state)
-    HubConfig.AutoFruit = state
-end)
-
--- [8] AUTONOMOUS MAIN AUTO-FARM ENGINE LOOP
+-- [7] ИСПРАВЛЕННЫЙ ЦИКЛ АВТОФАРМА (С ПРИНЯТИЕМ УРОНА И ОРУЖИЕМ)
 task.spawn(function()
-    while task.wait(0.18) do
+    while task.wait(0.15) do
         pcall(function()
             if HubConfig.AutoFarmLevel then
-                local characterRef = LocalPlayer.Character
-                if not characterRef or not characterRef:FindFirstChild("HumanoidRootPart") or not characterRef:FindFirstChild("Humanoid") then return end
-                
-                local hrp = characterRef.HumanoidRootPart
-                local humanoid = characterRef.Humanoid
-                if humanoid.Health <= 0 then return end
+                local char = LocalPlayer.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") then return end
+                local hrp = char.HumanoidRootPart
+                local hum = char.Humanoid
+                if hum.Health <= 0 then return end
 
-                local questName, questIndex, targetMobName, npcPosition = FetchCurrentQuestDetails()
+                local qName, qIndex, targetMobName, npcPos = FetchCurrentQuestDetails()
 
                 if not IsQuestActiveOnScreen() then
-                    AbortActiveTween()
-                    if (hrp.Position - npcPosition.Position).Magnitude > 18 then
-                        ExecuteTweenToCFrame(npcPosition + Vector3.new(0, 12, 0))
+                    hum.PlatformStand = false
+                    if (hrp.Position - npcPos.Position).Magnitude > 15 then
+                        hrp.CFrame = npcPos + Vector3.new(0, 5, 0)
                     else
                         if RemotesDirectory and RemotesDirectory:FindFirstChild("CommF_") then
-                            RemotesDirectory.CommF_:InvokeServer("RequestQuest", questName, questIndex)
-                            task.wait(0.7)
+                            RemotesDirectory.CommF_:InvokeServer("RequestQuest", qName, qIndex)
+                            task.wait(0.8)
                         end
                     end
                 else
-                    local targetMobInstance = nil
-                    local enemiesFolderRef = Workspace:FindFirstChild("Enemies")
-                    
-                    if enemiesFolderRef then
-                        for _, enemyModel in ipairs(enemiesFolderRef:GetChildren()) do
-                            local enemyHum = enemyModel:FindFirstChild("Humanoid")
-                            local enemyHrp = enemyModel:FindFirstChild("HumanoidRootPart")
-                            if enemyHum and enemyHrp and enemyHum.Health > 0 and enemyModel.Name == targetMobName then
-                                targetMobInstance = enemyModel
+                    -- Ищем моба
+                    local target = nil
+                    local enemies = Workspace:FindFirstChild("Enemies")
+                    if enemies then
+                        for _, enemy in ipairs(enemies:GetChildren()) do
+                            local eHum = enemy:FindFirstChild("Humanoid")
+                            local eHrp = enemy:FindFirstChild("HumanoidRootPart")
+                            if eHum and eHrp and eHum.Health > 0 and enemy.Name == targetMobName then
+                                target = enemy
                                 break
                             end
                         end
                     end
 
-                    if not targetMobInstance and enemiesFolderRef then
-                        for _, enemyModel in ipairs(enemiesFolderRef:GetChildren()) do
-                            local enemyHum = enemyModel:FindFirstChild("Humanoid")
-                            local enemyHrp = enemyModel:FindFirstChild("HumanoidRootPart")
-                            if enemyHum and enemyHrp and enemyHum.Health > 0 then
-                                targetMobInstance = enemyModel
+                    if not target and enemies then
+                        for _, enemy in ipairs(enemies:GetChildren()) do
+                            local eHum = enemy:FindFirstChild("Humanoid")
+                            local eHrp = enemy:FindFirstChild("HumanoidRootPart")
+                            if eHum and eHrp and eHum.Health > 0 then
+                                target = enemy
                                 break
                             end
                         end
                     end
 
-                    if targetMobInstance and targetMobInstance:FindFirstChild("HumanoidRootPart") then
-                        local mobRootPart = targetMobInstance.HumanoidRootPart
+                    if target and target:FindFirstChild("HumanoidRootPart") then
+                        local tHrp = target.HumanoidRootPart
                         
-                        humanoid.PlatformStand = true
-                        hrp.CFrame = mobRootPart.CFrame + Vector3.new(0, HubConfig.AttackDistance, 0)
+                        -- Держим персонажа прямо над мобом для прохождения урона ближнего боя
+                        hum.PlatformStand = true
+                        hrp.CFrame = tHrp.CFrame + Vector3.new(0, HubConfig.AttackDistance, 0)
                         hrp.Velocity = Vector3.new(0, 0, 0)
 
-                        local activeTool = GetActiveEquippedTool()
-                        if not activeTool then
-                            local backpackContainer = LocalPlayer:FindFirstChildOfClass("Backpack")
-                            if backpackContainer then
-                                for _, itemObj in ipairs(backpackContainer:GetChildren()) do
-                                    if itemObj:IsA("Tool") then
-                                        itemObj.Parent = characterRef
-                                        activeTool = itemObj
-                                        break
-                                    end
-                                end
-                            end
-                        end
+                        -- Достаем оружие в руки
+                        EquipWeapon()
 
-                        if activeTool then
-                            activeTool:Activate()
-                        end
-
-                        if enemiesFolderRef then
-                            for _, enemyModel in ipairs(enemiesFolderRef:GetChildren()) do
-                                if enemyModel.Name == targetMobName and enemyModel:FindFirstChild("HumanoidRootPart") then
-                                    local eRoot = enemyModel.HumanoidRootPart
-                                    eRoot.CFrame = mobRootPart.CFrame
-                                    eRoot.CanCollide = false
-                                    local eHum = enemyModel:FindFirstChildOfClass("Humanoid")
-                                    if eHum then
-                                        eHum.WalkSpeed = 0
-                                    end
+                        -- Стягивание остальных мобов в одну точку
+                        if enemies then
+                            for _, enemy in ipairs(enemies:GetChildren()) do
+                                if enemy.Name == targetMobName and enemy:FindFirstChild("HumanoidRootPart") then
+                                    enemy.HumanoidRootPart.CFrame = tHrp.CFrame
+                                    enemy.HumanoidRootPart.CanCollide = false
                                 end
                             end
                         end
                     else
-                        humanoid.PlatformStand = false
+                        hum.PlatformStand = false
                     end
                 end
             else
-                local characterRef = LocalPlayer.Character
-                if characterRef and characterRef:FindFirstChild("Humanoid") then
-                    characterRef.Humanoid.PlatformStand = false
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChild("Humanoid") then
+                    char.Humanoid.PlatformStand = false
                 end
             end
         end)
     end
 end)
 
--- [9] FAST ATTACK WORKER THREAD
+-- [8] FAST ATTACK (АКТИВАЦИЯ ОРУЖИЯ ДЛЯ УРОНА)
 task.spawn(function()
-    while task.wait(0.035) do
+    while task.wait(0.04) do
         pcall(function()
-            if HubConfig.FastAttack then
-                local characterRef = LocalPlayer.Character
-                if characterRef then
-                    local equippedToolRef = GetActiveEquippedTool()
-                    if equippedToolRef and equippedToolRef:FindFirstChild("Handle") then
-                        equippedToolRef:Activate()
+            if HubConfig.FastAttack or HubConfig.AutoFarmLevel then
+                local char = LocalPlayer.Character
+                if char then
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if tool then
+                        tool:Activate()
                     end
                 end
             end
@@ -484,28 +378,25 @@ task.spawn(function()
     end
 end)
 
--- [10] PASSIVE NOCLIP MODULE
+-- [9] NOCLIP
 RunService.Stepped:Connect(function()
     if HubConfig.Noclip and LocalPlayer.Character then
-        local hrpRef = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if hrpRef then
-            hrpRef.AssemblyLinearVelocity = Vector3.new(hrpRef.AssemblyLinearVelocity.X, 0, hrpRef.AssemblyLinearVelocity.Z)
-        end
-        for _, partObj in ipairs(LocalPlayer.Character:GetDescendants()) do
-            if partObj:IsA("BasePart") and partObj.Name ~= "HumanoidRootPart" then
-                partObj.CanCollide = false
+        local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 0, hrp.AssemblyLinearVelocity.Z) end
+        for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                part.CanCollide = false
             end
         end
     end
 end)
 
--- [11] PASSIVE HAKI MAINTENANCE
+-- [10] AUTO HAKI
 task.spawn(function()
     while task.wait(2) do
         pcall(function()
-            if HubConfig.AutoHaki then
-                local characterRef = LocalPlayer.Character
-                if characterRef and not characterRef:FindFirstChild("Buso") and RemotesDirectory and RemotesDirectory:FindFirstChild("CommF_") then
+            if HubConfig.AutoHaki and LocalPlayer.Character and not LocalPlayer.Character:FindFirstChild("Buso") then
+                if RemotesDirectory and RemotesDirectory:FindFirstChild("CommF_") then
                     RemotesDirectory.CommF_:InvokeServer("Buso")
                 end
             end
@@ -513,43 +404,12 @@ task.spawn(function()
     end
 end)
 
--- [12] PASSIVE CHEST & FRUIT COLLECTION
-task.spawn(function()
-    while task.wait(0.5) do
-        pcall(function()
-            local hrpRef = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if not hrpRef then return end
-
-            if HubConfig.AutoChest then
-                for _, obj in ipairs(Workspace:GetChildren()) do
-                    if obj:IsA("Part") and string.find(obj.Name, "Chest") then
-                        hrpRef.CFrame = obj.CFrame
-                        task.wait(0.1)
-                        break
-                    end
-                end
-            end
-
-            if HubConfig.AutoFruit then
-                for _, obj in ipairs(Workspace:GetChildren()) do
-                    if obj:IsA("Tool") and obj:FindFirstChild("Handle") then
-                        hrpRef.CFrame = obj.Handle.CFrame
-                        task.wait(0.2)
-                        break
-                    end
-                end
-            end
-        end)
-    end
-end)
-
--- [13] NOTIFICATION
 pcall(function()
     StarterGui:SetCore("SendNotification", {
-        Title = "⚡ Quantum God Hub Enterprise",
-        Text = "Master Framework successfully compiled and loaded!",
-        Duration = 6
+        Title = "⚡ Quantum God Hub",
+        Text = "Combat fix loaded successfully!",
+        Duration = 5
     })
 end)
 
-print("[QuantumCore] Execution completed successfully without syntax errors.")
+print("[QuantumCore] Execution finished successfully.")
